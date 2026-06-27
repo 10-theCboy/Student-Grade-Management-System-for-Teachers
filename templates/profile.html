@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+{% block page_title %}{{ _('profile_settings') }}{% endblock %}
+{% block page_content %}
+{% set initials = g.user.full_name.split() | map('first') | join('') | upper %}
+<div class="dashboard-wrapper">
+    <aside class="dash-sidebar">
+        <div class="sidebar-header">
+            {% include '_logo.html' %}
+        </div>
+        <hr class="sidebar-divider">
+        <div class="menu-label">{{ _('menu') }}</div>
+        <ul class="sidebar-nav">
+            {% if session.role == 'student' %}
+            <li><a href="{{ url_for('student.dashboard') }}" class="nav-link"><i class="bi bi-speedometer2"></i>{{ _('dashboard') }}</a></li>
+            <li><a href="#" class="nav-link"><i class="bi bi-journal-text"></i>{{ _('lessons') }}</a></li>
+            <li><a href="#" class="nav-link"><i class="bi bi-calendar3"></i>{{ _('schedule') }}</a></li>
+            <li><a href="#" class="nav-link"><i class="bi bi-folder"></i>{{ _('materials') }}</a></li>
+            <li><a href="#" class="nav-link"><i class="bi bi-chat-dots"></i>{{ _('forum') }}</a></li>
+            {% elif session.role == 'teacher' %}
+            <li><a href="{{ url_for('teacher.dashboard') }}" class="nav-link"><i class="bi bi-speedometer2"></i>{{ _('dashboard') }}</a></li>
+            <li><a href="#" class="nav-link"><i class="bi bi-journal-text"></i>{{ _('lessons') }}</a></li>
+            <li><a href="#" class="nav-link"><i class="bi bi-calendar3"></i>{{ _('schedule') }}</a></li>
+            <li><a href="#" class="nav-link"><i class="bi bi-folder"></i>{{ _('materials') }}</a></li>
+            <li><a href="#" class="nav-link"><i class="bi bi-chat-dots"></i>{{ _('forum') }}</a></li>
+            {% elif session.role == 'admin' %}
+            <li><a href="{{ url_for('admin.dashboard') }}" class="nav-link"><i class="bi bi-speedometer2"></i>{{ _('dashboard') }}</a></li>
+            <li><a href="#" class="nav-link"><i class="bi bi-journal-text"></i>{{ _('lessons') }}</a></li>
+            <li><a href="#" class="nav-link"><i class="bi bi-calendar3"></i>{{ _('schedule') }}</a></li>
+            <li><a href="#" class="nav-link"><i class="bi bi-folder"></i>{{ _('materials') }}</a></li>
+            <li><a href="#" class="nav-link"><i class="bi bi-chat-dots"></i>{{ _('forum') }}</a></li>
+            <li><a href="{{ url_for('admin.courses') }}" class="nav-link"><i class="bi bi-book"></i>{{ _('courses') }}</a></li>
+            <li><a href="{{ url_for('admin.audit_log') }}" class="nav-link"><i class="bi bi-clock-history"></i>{{ _('audit_log') }}</a></li>
+            {% endif %}
+            <li><a href="#" class="nav-link"><i class="bi bi-question-circle"></i>{{ _('help') }}</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <div class="user-card">
+                <div class="avatar"{% if g.user.avatar %} style="background-image:url({{ g.user.avatar }});background-size:cover;background-position:center;background-origin:content-box;padding:0"{% endif %}>{% if not g.user.avatar %}{{ initials[:2] }}{% endif %}</div>
+                <div class="user-info">
+                    <div class="user-name">{{ g.user.full_name }}</div>
+                    <div class="user-role">{{ session.role }}</div>
+                </div>
+            </div>
+            <a href="{{ url_for('auth.profile') }}" class="sign-out"><i class="bi bi-gear"></i>{{ _('settings') }}</a>
+        </div>
+    </aside>
+    <div class="dash-main">
+        <header class="dash-topbar">
+            <div class="dash-topbar-left d-flex align-items-center gap-3">
+                <a href="{% if session.role == 'student' %}{{ url_for('student.dashboard') }}{% elif session.role == 'teacher' %}{{ url_for('teacher.dashboard') }}{% else %}{{ url_for('admin.dashboard') }}{% endif %}" class="btn-back"><i class="bi bi-arrow-left"></i></a>
+                <div>
+                    <h2>{{ _('profile_settings') }}</h2>
+                </div>
+            </div>
+            <div class="dash-topbar-right">
+                <div class="dropdown d-inline-block">
+                    <a href="#" class="lang-btn" data-bs-toggle="dropdown" aria-expanded="false" title="{{ _('language') }}">
+                        <i class="bi bi-globe2"></i>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item lang-dropdown-item{% if current_lang == 'en' %} active{% endif %}" href="{{ url_for('auth.set_language', lang='en') }}">EN</a></li>
+                        <li><a class="dropdown-item lang-dropdown-item{% if current_lang == 'zh' %} active{% endif %}" href="{{ url_for('auth.set_language', lang='zh') }}">中文</a></li>
+                    </ul>
+                </div>
+                <i class="bi bi-bell bell"><span class="badge-dot"></span></i>
+                <div class="dash-avatar" title="{{ g.user.full_name }}"{% if g.user.avatar %} style="background-image:url({{ g.user.avatar }});background-size:cover;background-position:center;padding:0"{% endif %}>{% if not g.user.avatar %}{{ initials[:2] }}{% endif %}</div>
+                <a href="{{ url_for('auth.logout') }}" class="btn-signout-top ms-1"><i class="bi bi-box-arrow-right"></i>{{ _('sign_out') }}</a>
+            </div>
+        </header>
+        <main class="dash-content">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for cat, msg in messages %}
+            <div class="alert alert-{{ cat }} alert-dismissible fade show py-2">{{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+            {% endfor %}
+            {% endwith %}
+
+            <div class="profile-header text-center mb-4">
+                <div class="profile-avatar-wrapper mx-auto mb-3">
+                    <div class="profile-avatar" id="profileAvatar"{% if user.avatar %} style="background-image:url({{ user.avatar }});background-size:cover;background-position:center"{% endif %}>{% if not user.avatar %}{{ initials[:2] }}{% endif %}</div>
+                    <label class="avatar-upload-btn" title="{{ _('change_photo') }}">
+                        <i class="bi bi-camera-fill"></i>
+                        <input type="file" id="avatarUpload" accept="image/*" hidden>
+                    </label>
+                </div>
+                <h4 class="fw-bold mb-1" style="color:#12174F">{{ user.full_name }}</h4>
+                <p class="text-muted mb-0" style="font-size:13px">@{{ user.username }} · <span class="badge bg-{% if session.role == 'admin' %}primary{% elif session.role == 'teacher' %}warning text-dark{% else %}success{% endif %} rounded-pill">{{ session.role | title }}</span></p>
+            </div>
+
+            <div class="row g-3 justify-content-center">
+                <div class="col-md-6">
+                    <div class="card glass-card h-100 overflow-hidden border-0">
+                        <div class="glass-accent" style="background:linear-gradient(90deg,#4B56B8,#4B56B8)"></div>
+                        <div class="card-body p-4">
+                            <h5 class="fw-bold mb-3" style="font-size:15px;color:#12174F"><i class="bi bi-person-gear me-2" style="color:#2E3591"></i>{{ _('profile_settings') }}</h5>
+                            <form method="post" id="profileForm">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                <input type="hidden" name="avatar_data" id="avatarData" value="">
+                                <div class="mb-3">
+                                    <label class="form-label small fw-semibold text-muted">{{ _('full_name') }}</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-person"></i></span>
+                                        <input name="full_name" class="form-control" value="{{ user.full_name }}" required>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label small fw-semibold text-muted">{{ _('email') }}</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                                        <input name="email" type="email" class="form-control" value="{{ user.email }}" required>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label small fw-semibold text-muted">{{ _('username') }}</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-at"></i></span>
+                                        <input class="form-control" value="{{ user.username }}" disabled readonly style="background:#f8f9fa">
+                                    </div>
+                                </div>
+                                <button class="btn btn-gradient w-100">{{ _('save_changes') }}</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card glass-card h-100 overflow-hidden border-0">
+                        <div class="glass-accent" style="background:linear-gradient(90deg,#C0392B,#C0392B)"></div>
+                        <div class="card-body p-4">
+                            <h5 class="fw-bold mb-3" style="font-size:15px;color:#12174F"><i class="bi bi-shield-lock me-2" style="color:#C0392B"></i>{{ _('change_password') }}</h5>
+                            <form method="post">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                <div class="mb-3">
+                                    <label class="form-label small fw-semibold text-muted">{{ _('current_password') }}</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                                        <input name="current_password" type="password" class="form-control" placeholder="········">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label small fw-semibold text-muted">{{ _('new_password') }}</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-key"></i></span>
+                                        <input name="new_password" type="password" class="form-control" placeholder="········">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label small fw-semibold text-muted">{{ _('confirm_password') }}</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-check-circle"></i></span>
+                                        <input name="confirm_password" type="password" class="form-control" placeholder="········">
+                                    </div>
+                                </div>
+                                <button class="btn w-100" style="background:rgba(192,57,43,0.1);color:#C0392B;font-weight:600;border:1px solid rgba(192,57,43,0.2);transition:all .2s ease" onmouseover="this.style.background='rgba(192,57,43,0.2)'" onmouseout="this.style.background='rgba(192,57,43,0.1)'">{{ _('change_password') }}</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var upload = document.getElementById('avatarUpload');
+    var avatar = document.getElementById('profileAvatar');
+    var avatarData = document.getElementById('avatarData');
+    if (!upload || !avatar) return;
+
+    function resizeImage(file, maxDim, cb) {
+        var reader = new FileReader();
+        reader.onload = function (e) {
+            var img = new Image();
+            img.onload = function () {
+                var w = img.width, h = img.height;
+                if (w > maxDim || h > maxDim) {
+                    var ratio = Math.min(maxDim / w, maxDim / h);
+                    w = Math.round(w * ratio);
+                    h = Math.round(h * ratio);
+                }
+                var canvas = document.createElement('canvas');
+                canvas.width = w;
+                canvas.height = h;
+                var ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, w, h);
+                cb(canvas.toDataURL('image/jpeg', 0.85));
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    upload.addEventListener('change', function (e) {
+        var file = e.target.files[0];
+        if (!file) return;
+        resizeImage(file, 400, function (dataUrl) {
+            avatar.style.backgroundImage = 'url(' + dataUrl + ')';
+            avatar.style.backgroundSize = 'cover';
+            avatar.style.backgroundPosition = 'center';
+            avatar.textContent = '';
+            if (avatarData) avatarData.value = dataUrl;
+        });
+    });
+
+    var form = document.getElementById('profileForm');
+    if (form && avatarData) {
+        form.addEventListener('submit', function () {
+            if (avatarData.value === '') avatarData.disabled = true;
+        });
+    }
+});
+</script>
+{% endblock %}

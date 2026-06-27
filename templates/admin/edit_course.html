@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+{% block page_title %}{{ _('edit_course') }}{% endblock %}
+{% block page_content %}
+{% set initials = g.user.full_name.split() | map('first') | join('') | upper %}
+<div class="dashboard-wrapper">
+    <aside class="dash-sidebar">
+        <div class="sidebar-header">{% include '_logo.html' %}</div>
+        <hr class="sidebar-divider">
+        <div class="menu-label">{{ _('menu') }}</div>
+        <ul class="sidebar-nav">
+            <li><a href="{{ url_for('admin.dashboard') }}" class="nav-link"><i class="bi bi-speedometer2"></i>{{ _('dashboard') }}</a></li>
+            <li><a href="#" class="nav-link"><i class="bi bi-journal-text"></i>{{ _('lessons') }}</a></li>
+            <li><a href="#" class="nav-link"><i class="bi bi-calendar3"></i>{{ _('schedule') }}</a></li>
+            <li><a href="#" class="nav-link"><i class="bi bi-folder"></i>{{ _('materials') }}</a></li>
+            <li><a href="#" class="nav-link"><i class="bi bi-chat-dots"></i>{{ _('forum') }}</a></li>
+            <li><a href="{{ url_for('admin.courses') }}" class="nav-link active"><i class="bi bi-book"></i>{{ _('courses') }}</a></li>
+            <li><a href="{{ url_for('admin.audit_log') }}" class="nav-link"><i class="bi bi-clock-history"></i>{{ _('audit_log') }}</a></li>
+            <li><a href="#" class="nav-link"><i class="bi bi-question-circle"></i>{{ _('help') }}</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <div class="user-card">
+                <div class="avatar"{% if g.user.avatar %} style="background-image:url({{ g.user.avatar }});background-size:cover;background-position:center;padding:0"{% endif %}>{% if not g.user.avatar %}{{ initials[:2] }}{% endif %}</div>
+                <div class="user-info">
+                    <div class="user-name">{{ g.user.full_name }}</div>
+                    <div class="user-role">{{ session.role }}</div>
+                </div>
+            </div>
+            <a href="{{ url_for('auth.profile') }}" class="sign-out"><i class="bi bi-gear"></i>{{ _('settings') }}</a>
+        </div>
+    </aside>
+    <div class="dash-main">
+        <header class="dash-topbar">
+            <div class="dash-topbar-left">
+                <h2>{{ _('edit_course') }}: {{ course.course_code }}</h2>
+                <span class="subtitle">{{ course.course_name }}</span>
+            </div>
+            <div class="dash-topbar-right">
+                <div class="dropdown d-inline-block">
+                    <a href="#" class="lang-btn" data-bs-toggle="dropdown" aria-expanded="false" title="{{ _('language') }}"><i class="bi bi-globe2"></i></a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item lang-dropdown-item{% if current_lang == 'en' %} active{% endif %}" href="{{ url_for('auth.set_language', lang='en') }}">EN</a></li>
+                        <li><a class="dropdown-item lang-dropdown-item{% if current_lang == 'zh' %} active{% endif %}" href="{{ url_for('auth.set_language', lang='zh') }}">中文</a></li>
+                    </ul>
+                </div>
+                <i class="bi bi-bell bell"><span class="badge-dot"></span></i>
+                <a href="{{ url_for('auth.profile') }}" class="dash-avatar" title="{{ g.user.full_name }}"{% if g.user.avatar %} style="background-image:url({{ g.user.avatar }});background-size:cover;background-position:center;padding:0"{% endif %}>{% if not g.user.avatar %}{{ initials[:2] }}{% endif %}</a>
+                <a href="{{ url_for('auth.logout') }}" class="btn-signout-top ms-1"><i class="bi bi-box-arrow-right"></i>{{ _('sign_out') }}</a>
+            </div>
+        </header>
+        <main class="dash-content">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for cat, msg in messages %}
+            <div class="alert alert-{{ cat }} alert-dismissible fade show py-2">{{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+            {% endfor %}
+            {% endwith %}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card glass-card border-0 overflow-hidden">
+            <div class="glass-accent" style="background:linear-gradient(90deg,#4B56B8,#4B56B8)"></div>
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center gap-2 mb-4">
+                    <a href="{{ url_for('admin.courses') }}" class="btn-back p-0"><i class="bi bi-arrow-left"></i></a>
+                    <h5 class="mb-0 fw-bold" style="font-size:16px;color:#12174F"><i class="bi bi-pencil-square me-2" style="color:#2E3591"></i>{{ _('edit_course') }}</h5>
+                </div>
+                <form method="post">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold text-muted">{{ _('course_code') }}</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-hash"></i></span>
+                                <input class="form-control" value="{{ course.course_code }}" disabled>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold text-muted">{{ _('enrollment_code') }}</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-key"></i></span>
+                                <input class="form-control" value="{{ course.enrollment_code }}" disabled>
+                            </div>
+                            <small class="text-muted" style="font-size:11px">{{ _('auto_generated_on_create') }}</small>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold text-muted">{{ _('course_name') }}</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-book"></i></span>
+                                <input name="course_name" class="form-control" value="{{ course.course_name }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold text-muted">{{ _('credits_label') }}</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-star"></i></span>
+                                <input name="credits" class="form-control" value="{{ course.credits }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label small fw-semibold text-muted">{{ _('teacher_label') }}</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-person-badge"></i></span>
+                                <select name="teacher_id" class="form-select">
+                                    <option value="">{{ _('unassigned') }}</option>
+                                    {% for t in teachers %}
+                                    <option value="{{ t.id }}" {% if course.teacher_id==t.id %}selected{% endif %}>{{ t.full_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2 mt-4">
+                        <button class="btn btn-gradient"><i class="bi bi-check-lg"></i> {{ _('save_changes') }}</button>
+                        <a href="{{ url_for('admin.courses') }}" class="btn btn-outline-secondary"><i class="bi bi-x"></i> {{ _('cancel') }}</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+        </main>
+    </div>
+</div>
+{% endblock %}

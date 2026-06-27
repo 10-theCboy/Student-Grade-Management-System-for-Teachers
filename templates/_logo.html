@@ -1,0 +1,10 @@
+<a href="{% if session.role == 'student' %}{{ url_for('student.dashboard') }}{% elif session.role == 'teacher' %}{{ url_for('teacher.dashboard') }}{% else %}{{ url_for('admin.dashboard') }}{% endif %}" class="text-decoration-none d-inline-block"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 56" class="sidebar-logo">
+  <rect class="logo-bg" x="0" y="0" width="56" height="56" rx="14"/>
+  <rect class="logo-bar1" x="10" y="34" width="8" height="14" rx="2"/>
+  <rect class="logo-bar2" x="22" y="24" width="8" height="24" rx="2"/>
+  <rect class="logo-bar3" x="34" y="16" width="8" height="32" rx="2"/>
+  <polyline class="logo-line" points="14,34 26,25 38,17" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="logo-dot" cx="38" cy="17" r="2.5"/>
+  <text class="logo-title" x="68" y="38" font-family="Georgia, 'Times New Roman', serif" font-size="26" font-weight="700">Grade<tspan class="logo-ms">MS</tspan></text>
+  <text class="logo-sub" x="68" y="50" font-family="Arial, sans-serif" font-size="9" letter-spacing="2.5">MANAGEMENT SYSTEM</text>
+</svg></a>

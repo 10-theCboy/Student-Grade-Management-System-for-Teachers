@@ -1,0 +1,91 @@
+{% extends 'auth/auth_base.html' %}
+{% block page_content %}
+{% set login_labels = {'teacher': _('teacher_role'), 'student': _('student_role')} %}
+<div class="card shadow auth-card">
+    <div class="card-body">
+        <form method="post" id="loginForm" novalidate>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="selected_role" id="selectedRole" value="">
+            {% if error %}
+            <div class="alert alert-danger py-2 mb-3" role="alert">{{ _('invalid_credentials') }}</div>
+            {% endif %}
+            <div class="mb-3">
+                <label class="form-label">{{ _('username') }}</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-person"></i></span>
+                    <input name="username" class="form-control{% if error %} is-invalid{% endif %}"
+                           required autofocus value="{{ username or '' }}">
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">{{ _('password') }}</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                    <input name="password" type="password" class="form-control{% if error %} is-invalid{% endif %}" id="passwordInput" required>
+                    <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                        <i class="bi bi-eye-slash" id="toggleIcon"></i>
+                    </button>
+                </div>
+            </div>
+            <button class="btn w-100 btn-signin">{{ _('sign_in') }}</button>
+            <p class="text-center mt-3 mb-0 register-link" id="registerLink">
+                {{ _('no_account') }} <a href="{{ url_for('auth.register') }}">{{ _('register_with_code') }}</a>
+            </p>
+        </form>
+    </div>
+</div>
+
+<div class="row g-2 mt-4 justify-content-center">
+    <div class="col-6">
+        <div class="card role-card h-100 text-center border-0 bg-light" data-role="teacher" tabindex="0">
+            <div class="card-body py-2 px-1">
+                <i class="bi bi-journal-bookmark-fill fs-5" style="color:#d97706"></i>
+                <small class="d-block fw-semibold mt-1" style="color:#92400e">{{ _('teacher_role') }}</small>
+                <small class="d-block text-muted" style="font-size:11px">{{ _('teacher_desc') }}</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-6">
+        <div class="card role-card h-100 text-center border-0 bg-light" data-role="student" tabindex="0">
+            <div class="card-body py-2 px-1">
+                <i class="bi bi-mortarboard-fill fs-5" style="color:#14A5AA"></i>
+                <small class="d-block fw-semibold mt-1" style="color:#0D7377">{{ _('student_role') }}</small>
+                <small class="d-block text-muted" style="font-size:11px">{{ _('student_desc') }}</small>
+            </div>
+        </div>
+    </div>
+</div>
+<p class="text-center text-muted small mt-2 mb-0" id="roleHint" data-hint="{{ _('role_hint_selected') }}" data-cred="{{ _('credentials') }}">{{ _('role_hint') }}</p>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var toggleBtn = document.getElementById('togglePassword');
+    var pwInput = document.getElementById('passwordInput');
+    var toggleIcon = document.getElementById('toggleIcon');
+    toggleBtn.addEventListener('click', function () {
+        var type = pwInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        pwInput.setAttribute('type', type);
+        toggleIcon.className = type === 'password' ? 'bi bi-eye-slash' : 'bi bi-eye';
+    });
+
+    var roleCards = document.querySelectorAll('.role-card');
+    var roleInput = document.getElementById('selectedRole');
+    var roleHint = document.getElementById('roleHint');
+    var registerLink = document.getElementById('registerLink');
+    var hintTpl = roleHint.getAttribute('data-hint');
+    var credTxt = roleHint.getAttribute('data-cred');
+    var roleNames = { 'teacher': '{{ _('teacher_role') }}', 'student': '{{ _('student_role') }}' };
+
+    roleCards.forEach(function (card) {
+        card.addEventListener('click', function () {
+            roleCards.forEach(function (c) { c.classList.remove('active'); });
+            this.classList.add('active');
+            var role = this.dataset.role;
+            roleInput.value = role;
+            roleHint.textContent = hintTpl + ' ' + roleNames[role] + ' ' + credTxt;
+            registerLink.style.display = role === 'student' ? '' : 'none';
+        });
+    });
+});
+</script>
+{% endblock %}

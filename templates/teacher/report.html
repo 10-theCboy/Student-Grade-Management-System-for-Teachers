@@ -1,0 +1,185 @@
+{% extends 'base.html' %}
+{% block page_title %}{{ course.course_code }} — {{ _('grade_report') }}{% endblock %}
+{% block page_content %}
+{% set initials = g.user.full_name.split() | map('first') | join('') | upper %}
+<div class="dashboard-wrapper">
+    <aside class="dash-sidebar">
+        <div class="sidebar-header">
+            {% include '_logo.html' %}
+        </div>
+        <hr class="sidebar-divider">
+        <div class="menu-label">{{ _('menu') }}</div>
+        <ul class="sidebar-nav">
+            <li><a href="{{ url_for('teacher.dashboard') }}" class="nav-link"><i class="bi bi-speedometer2"></i>{{ _('dashboard') }}</a></li>
+            <li><a href="#" class="nav-link"><i class="bi bi-journal-text"></i>{{ _('lessons') }}</a></li>
+            <li><a href="#" class="nav-link"><i class="bi bi-calendar3"></i>{{ _('schedule') }}</a></li>
+            <li><a href="#" class="nav-link"><i class="bi bi-folder"></i>{{ _('materials') }}</a></li>
+            <li><a href="#" class="nav-link"><i class="bi bi-chat-dots"></i>{{ _('forum') }}</a></li>
+            <li><a href="#" class="nav-link"><i class="bi bi-question-circle"></i>{{ _('help') }}</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <div class="user-card">
+                <div class="avatar">{{ initials[:2] }}</div>
+                <div class="user-info">
+                    <div class="user-name">{{ g.user.full_name }}</div>
+                    <div class="user-role">{{ session.role }}</div>
+                </div>
+            </div>
+            <a href="{{ url_for('auth.profile') }}" class="sign-out"><i class="bi bi-gear"></i>{{ _('settings') }}</a>
+        </div>
+    </aside>
+    <div class="dash-main">
+        <header class="dash-topbar">
+            <div class="dash-topbar-left">
+                <h2>{{ course.course_code }} — {{ _('grade_report') }}</h2>
+                <span class="subtitle"></span>
+            </div>
+            <div class="dash-topbar-right">
+                <div class="dropdown d-inline-block">
+                    <a href="#" class="lang-btn" data-bs-toggle="dropdown" aria-expanded="false" title="{{ _('language') }}">
+                        <i class="bi bi-globe2"></i>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item lang-dropdown-item{% if current_lang == 'en' %} active{% endif %}" href="{{ url_for('auth.set_language', lang='en') }}">EN</a></li>
+                        <li><a class="dropdown-item lang-dropdown-item{% if current_lang == 'zh' %} active{% endif %}" href="{{ url_for('auth.set_language', lang='zh') }}">中文</a></li>
+                    </ul>
+                </div>
+                <i class="bi bi-bell bell"></i>
+                <a href="{{ url_for('auth.profile') }}" class="dash-avatar" title="{{ g.user.full_name }}">{{ initials[:2] }}</a>
+                <a href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-outline-danger ms-1">{{ _('sign_out') }}</a>
+            </div>
+        </header>
+        <main class="dash-content">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for cat, msg in messages %}
+            <div class="alert alert-{{ cat }} alert-dismissible fade show py-2">{{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+            {% endfor %}
+            {% endwith %}
+
+<div class="row mb-3">
+    <div class="col-md-3">
+        <div class="card text-center border-primary">
+            <div class="card-body">
+                <h5 class="card-title text-primary">{{ avg }}</h5>
+                <small class="text-muted">{{ _('class_average') }}</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center border-success">
+            <div class="card-body">
+                <h5 class="card-title text-success">{{ highest }}</h5>
+                <small class="text-muted">{{ _('highest_score') }}</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center border-danger">
+            <div class="card-body">
+                <h5 class="card-title text-danger">{{ lowest }}</h5>
+                <small class="text-muted">{{ _('lowest_score') }}</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center border-warning">
+            <div class="card-body">
+                <h5 class="card-title text-warning">{{ failing }}</h5>
+                <small class="text-muted">{{ _('failing_students') }}</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-7">
+        <div class="card mb-3">
+            <div class="card-header fw-bold d-flex justify-content-between">
+                <span>{{ _('grade_summary') }}</span>
+                <a href="{{ url_for('teacher.export_confirm', course_id=course.id) }}" class="btn btn-sm btn-success">{{ _('export_csv') }}</a>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-striped mb-0">
+                    <thead><tr><th>{{ _('student') }}</th><th>{{ _('average') }} (%)</th><th>{{ _('grade') }}</th></tr></thead>
+                    <tbody>
+                    {% for gd in grade_data %}
+                    <tr class="{% if gd.total < 60 %}table-danger{% endif %}">
+                        <td>{{ gd.student.full_name }}</td>
+                        <td>{{ gd.total }}</td>
+                        <td>
+                            {% set g = 'A' if gd.total >= 90 else 'B' if gd.total >= 80 else 'C' if gd.total >= 70 else 'D' if gd.total >= 60 else 'F' %}
+                            <span class="badge bg-{% if g == 'A' %}success{% elif g == 'B' %}primary{% elif g == 'C' %}warning text-dark{% elif g == 'D' %}danger{% else %}dark{% endif %}">
+                                {{ g }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-5">
+        <div class="card mb-3">
+            <div class="card-header fw-bold">{{ _('grade_distribution') }}</div>
+            <div class="card-body">
+                <canvas id="distChart" height="200"></canvas>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header fw-bold text-bg-danger">{{ _('failing_students') }} ({{ failing }})</div>
+            <div class="card-body p-0">
+                {% if failing %}
+                <table class="table table-danger mb-0">
+                    <thead><tr><th>{{ _('name') }}</th><th>{{ _('avg') }}</th><th>{{ _('grade') }}</th><th>{{ _('missing_zero_items') }}</th></tr></thead>
+                    <tbody>
+                    {% for f in failing_students %}
+                    <tr>
+                        <td>{{ f.student.full_name }}</td>
+                        <td>{{ f.total }}</td>
+                        <td><span class="badge bg-dark">F</span></td>
+                        <td>
+                            {% if f.missing_items %}
+                            <ul class="list-unstyled mb-0 small">
+                            {% for mi in f.missing_items[:5] %}
+                                <li>{{ mi.item_name }}</li>
+                            {% endfor %}
+                            {% if f.missing_items|length > 5 %}
+                                <li class="text-muted">+{{ f.missing_items|length - 5 }} more</li>
+                            {% endif %}
+                            </ul>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="p-3 text-muted">{{ _('no_failing_students') }}</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+<a href="{{ url_for('teacher.dashboard') }}" class="btn btn-secondary mt-2">{{ _('back') }}</a>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script>
+new Chart(document.getElementById('distChart'), {
+    type: 'bar',
+    data: {
+        labels: {{ labels|tojson }},
+        datasets: [{
+            label: '{{ _('students') }}',
+            data: {{ bins|tojson }},
+            backgroundColor: ['#dc3545','#ffc107','#0d6efd','#198754','#20c997']
+        }]
+    },
+    options: { responsive: true, plugins: { legend: { display: false } } }
+});
+</script>
+        </main>
+    </div>
+</div>
+{% endblock %}

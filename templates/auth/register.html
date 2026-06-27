@@ -1,0 +1,170 @@
+{% extends 'auth/auth_base.html' %}
+{% block page_content %}
+<div class="card shadow auth-card">
+    <div class="card-body p-3">
+        <div class="text-center mb-3 pb-2 border-bottom">
+            <h5 class="fw-bold mb-0" style="color:#2E3591"><i class="bi bi-person-plus-fill me-1"></i>{{ _('student_registration') }}</h5>
+        </div>
+        <form method="post" novalidate>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <div class="row g-2">
+                <div class="col-md-6 mb-1">
+                    <label class="form-label small">{{ _('full_name') }}</label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text"><i class="bi bi-person"></i></span>
+                        <input name="full_name" class="form-control{% if field_errors.get('full_name') %} is-invalid{% endif %}" required autofocus
+                               value="{{ data.full_name or '' }}">
+                    </div>
+                    {% if field_errors.get('full_name') %}<div class="invalid-feedback d-block" style="font-size:11px">{{ field_errors['full_name'] }}</div>{% endif %}
+                </div>
+                <div class="col-md-6 mb-1">
+                    <label class="form-label small">{{ _('username') }}</label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text"><i class="bi bi-at"></i></span>
+                        <input name="username" class="form-control{% if field_errors.get('username') %} is-invalid{% endif %}" required
+                               value="{{ data.username or '' }}">
+                    </div>
+                    {% if field_errors.get('username') %}<div class="invalid-feedback d-block" style="font-size:11px">{{ field_errors['username'] }}</div>{% endif %}
+                </div>
+            </div>
+            <div class="mb-1">
+                <label class="form-label small">{{ _('email') }}</label>
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                    <input name="email" type="email" class="form-control{% if field_errors.get('email') %} is-invalid{% endif %}" required
+                           value="{{ data.email or '' }}">
+                </div>
+                {% if field_errors.get('email') %}<div class="invalid-feedback d-block" style="font-size:11px">{{ field_errors['email'] }}</div>{% endif %}
+            </div>
+            <div class="mb-1">
+                <label class="form-label small">{{ _('enrollment_code') }}</label>
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text"><i class="bi bi-key"></i></span>
+                    <input name="enrollment_code" class="form-control{% if field_errors.get('enrollment_code') %} is-invalid{% endif %}" required
+                           placeholder="{{ _('enrollment_placeholder') }}"
+                           value="{{ data.enrollment_code or '' }}">
+                </div>
+                {% if field_errors.get('enrollment_code') %}<div class="invalid-feedback d-block" style="font-size:11px">{{ field_errors['enrollment_code'] }}</div>{% endif %}
+            </div>
+
+            <div class="bg-light rounded p-2 mb-2">
+                <h6 class="fw-semibold mb-1" style="color:#2E3591;font-size:13px"><i class="bi bi-shield-lock me-1"></i>{{ _('password') }}</h6>
+                <div class="mb-1">
+                    <label class="form-label small" style="font-size:11px">{{ _('set_password') }}</label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                        <input name="password" type="password" class="form-control{% if field_errors.get('password') %} is-invalid{% endif %}" required minlength="8" id="regPassword" style="font-size:13px">
+                        <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                            <i class="bi bi-eye-slash" id="toggleIcon"></i>
+                        </button>
+                    </div>
+                    {% if field_errors.get('password') %}<div class="invalid-feedback d-block" style="font-size:11px">{{ field_errors['password'] }}</div>{% endif %}
+                    <div class="mt-1" id="pwMeter" style="display:none">
+                        <div class="pw-meter-bar"><div class="pw-meter-fill" id="meterFill"></div></div>
+                        <small class="pw-meter-label" id="meterLabel"></small>
+                    </div>
+                </div>
+                <div class="mb-0">
+                    <label class="form-label small" style="font-size:11px">{{ _('confirm_password') }}</label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+                        <input name="confirm_password" type="password" class="form-control{% if field_errors.get('confirm_password') %} is-invalid{% endif %}" required id="regConfirm" style="font-size:13px">
+                        <button class="btn btn-outline-secondary" type="button" id="toggleConfirm">
+                            <i class="bi bi-eye-slash" id="toggleConfirmIcon"></i>
+                        </button>
+                    </div>
+                    {% if field_errors.get('confirm_password') %}<div class="invalid-feedback d-block" style="font-size:11px">{{ field_errors['confirm_password'] }}</div>{% endif %}
+                    <small id="confirmMsg" class="form-text mt-0 d-block"></small>
+                </div>
+                <small class="text-muted mt-1 d-block" style="font-size:10px">
+                    <i class="bi bi-info-circle"></i> {{ _('password_requirements') }}
+                </small>
+            </div>
+
+            <button class="btn w-100 btn-signin btn-sm">{{ _('register') }}</button>
+        </form>
+        <p class="text-center mt-2 mb-0 small">{{ _('already_have_account') }} <a href="{{ url_for('auth.login') }}">{{ _('login') }}</a></p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+.pw-meter-bar { height: 4px; background: #e9ecef; border-radius: 4px; overflow: hidden; }
+.pw-meter-fill { height: 100%; width: 0; border-radius: 4px; transition: width .3s ease, background .3s ease; }
+.pw-meter-fill.weak { width: 33%; background: #dc3545; }
+.pw-meter-fill.mid { width: 66%; background: #f59e0b; }
+.pw-meter-fill.strong { width: 100%; background: #14A5AA; }
+.pw-meter-label { font-size: 11px; display: block; margin-top: 2px; }
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    function makeToggle(btnId, inputId, iconId) {
+        var btn = document.getElementById(btnId);
+        var input = document.getElementById(inputId);
+        var icon = document.getElementById(iconId);
+        if (!btn || !input || !icon) return;
+        btn.addEventListener('click', function () {
+            var type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+            input.setAttribute('type', type);
+            icon.className = type === 'password' ? 'bi bi-eye-slash' : 'bi bi-eye';
+        });
+    }
+    makeToggle('togglePassword', 'regPassword', 'toggleIcon');
+    makeToggle('toggleConfirm', 'regConfirm', 'toggleConfirmIcon');
+
+    var pwInput = document.getElementById('regPassword');
+    var confirmInput = document.getElementById('regConfirm');
+    var confirmMsg = document.getElementById('confirmMsg');
+    var meter = document.getElementById('pwMeter');
+    var meterFill = document.getElementById('meterFill');
+    var meterLabel = document.getElementById('meterLabel');
+
+    var pwStrengthText = '{{ _('password_strength') }}';
+    var weakText = '{{ _('weak') }}';
+    var midText = '{{ _('medium') }}';
+    var strongText = '{{ _('strong') }}';
+    var matchText = '{{ _('passwords_match') }}';
+    var noMatchText = '{{ _('passwords_no_match') }}';
+
+    function checkStrength() {
+        var val = pwInput.value;
+        if (val.length === 0) { meter.style.display = 'none'; return; }
+        meter.style.display = 'block';
+        var score = 0;
+        if (val.length >= 8) score++;
+        if (/[A-Z]/.test(val)) score++;
+        if (/[a-z]/.test(val)) score++;
+        if (/\d/.test(val)) score++;
+        if (/[^a-zA-Z0-9]/.test(val)) score++;
+
+        var level, label;
+        if (score <= 2) { level = 'weak'; label = weakText; }
+        else if (score <= 4) { level = 'mid'; label = midText; }
+        else { level = 'strong'; label = strongText; }
+        meterFill.className = 'pw-meter-fill ' + level;
+        meterLabel.textContent = pwStrengthText + ' ' + label;
+        meterLabel.style.color = level === 'weak' ? '#dc3545' : level === 'mid' ? '#f59e0b' : '#14A5AA';
+    }
+
+    function checkMatch() {
+        if (confirmInput.value.length === 0) {
+            confirmMsg.textContent = '';
+            confirmMsg.className = 'form-text mt-1 d-block';
+        } else if (confirmInput.value === pwInput.value) {
+            confirmMsg.textContent = matchText;
+            confirmMsg.className = 'form-text mt-1 d-block text-success';
+        } else {
+            confirmMsg.textContent = noMatchText;
+            confirmMsg.className = 'form-text mt-1 d-block text-danger';
+        }
+    }
+
+    pwInput.addEventListener('input', function () {
+        checkStrength();
+        checkMatch();
+    });
+    confirmInput.addEventListener('input', checkMatch);
+});
+</script>
+{% endblock %}

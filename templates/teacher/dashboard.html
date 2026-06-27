@@ -1,0 +1,217 @@
+{% extends 'base.html' %}
+{% block page_title %}{{ _('teacher_dashboard') }}{% endblock %}
+{% block page_content %}
+{% set initials = g.user.full_name.split() | map('first') | join('') | upper %}
+{% set greeting = _('morning') if now().hour < 12 else _('afternoon') %}
+<div class="dashboard-wrapper">
+    <aside class="dash-sidebar">
+        <div class="sidebar-header">
+            {% include '_logo.html' %}
+        </div>
+        <hr class="sidebar-divider">
+        <div class="menu-label">{{ _('menu') }}</div>
+        <ul class="sidebar-nav">
+            <li><a href="{{ url_for('teacher.dashboard') }}" class="nav-link active"><i class="bi bi-speedometer2"></i>{{ _('dashboard') }}</a></li>
+            <li><a href="{{ url_for('teacher.dashboard') }}" class="nav-link"><i class="bi bi-book"></i>{{ _('my_courses') }}</a></li>
+            <li><a href="{{ url_for('teacher.grades', course_id=courses[0].id) if courses else '#' }}" class="nav-link"><i class="bi bi-pencil-square"></i>{{ _('grade_entry') }}</a></li>
+            <li><a href="{{ url_for('teacher.report', course_id=courses[0].id) if courses else '#' }}" class="nav-link"><i class="bi bi-file-earmark-bar-graph"></i>{{ _('reports') }}</a></li>
+            <li><a href="{{ url_for('teacher.export_confirm', course_id=courses[0].id) if courses else '#' }}" class="nav-link"><i class="bi bi-download"></i>{{ _('export_csv') }}</a></li>
+            <!-- FUTURE: placeholder nav items -->
+            <li><a href="#" class="nav-link"><i class="bi bi-journal-text"></i>{{ _('lessons') }}</a></li>
+            <li><a href="#" class="nav-link"><i class="bi bi-calendar3"></i>{{ _('schedule') }}</a></li>
+            <li><a href="#" class="nav-link"><i class="bi bi-folder"></i>{{ _('materials') }}</a></li>
+            <li><a href="#" class="nav-link"><i class="bi bi-chat-dots"></i>{{ _('forum') }}</a></li>
+            <li class="menu-label" style="padding:0.75rem 0.75rem 0.25rem;color:rgba(255,255,255,0.35);font-size:10px;text-transform:uppercase;letter-spacing:1px;font-weight:600;list-style:none">{{ _('my_courses') }}</li>
+            {% for c in courses %}
+            <li><a href="{{ url_for('teacher.grades', course_id=c.id) }}" class="nav-link" style="font-size:12px;padding:0.35rem 0.75rem 0.35rem 2.2rem"><i class="bi bi-book" style="font-size:12px"></i>{{ c.course_code }}</a></li>
+            {% endfor %}
+            <li><a href="#" class="nav-link"><i class="bi bi-question-circle"></i>{{ _('help') }}</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <div class="user-card">
+                <div class="avatar"{% if g.user.avatar %} style="background-image:url({{ g.user.avatar }});background-size:cover;background-position:center;background-origin:content-box;padding:0"{% endif %}>{% if not g.user.avatar %}{{ initials[:2] }}{% endif %}</div>
+                <div class="user-info">
+                    <div class="user-name">{{ g.user.full_name }}</div>
+                    <div class="user-role">{{ session.role }}</div>
+                </div>
+            </div>
+            <a href="{{ url_for('auth.profile') }}" class="sign-out"><i class="bi bi-gear"></i>{{ _('settings') }}</a>
+        </div>
+    </aside>
+    <div class="dash-main">
+        <header class="dash-topbar">
+            <div class="dash-topbar-left">
+                <h2>{{ _('teacher_dashboard') }}</h2>
+                <span class="subtitle">{{ greeting }}, {{ g.user.full_name.split() | first }}.</span>
+            </div>
+            <div class="dash-topbar-right">
+                <div class="dropdown d-inline-block">
+                    <a href="#" class="lang-btn" data-bs-toggle="dropdown" aria-expanded="false" title="{{ _('language') }}">
+                        <i class="bi bi-globe2"></i>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item lang-dropdown-item{% if current_lang == 'en' %} active{% endif %}" href="{{ url_for('auth.set_language', lang='en') }}">EN</a></li>
+                        <li><a class="dropdown-item lang-dropdown-item{% if current_lang == 'zh' %} active{% endif %}" href="{{ url_for('auth.set_language', lang='zh') }}">中文</a></li>
+                    </ul>
+                </div>
+                <i class="bi bi-bell bell"><span class="badge-dot"></span></i>
+                <a href="{{ url_for('auth.profile') }}" class="dash-avatar" title="{{ g.user.full_name }}"{% if g.user.avatar %} style="background-image:url({{ g.user.avatar }});background-size:cover;background-position:center;padding:0"{% endif %}>{% if not g.user.avatar %}{{ initials[:2] }}{% endif %}</a>
+                <a href="{{ url_for('auth.logout') }}" class="btn-signout-top ms-1"><i class="bi bi-box-arrow-right"></i>{{ _('sign_out') }}</a>
+            </div>
+        </header>
+        <main class="dash-content">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for cat, msg in messages %}
+            <div class="alert alert-{{ cat }} alert-dismissible fade show py-2">{{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+            {% endfor %}
+            {% endwith %}
+
+<!-- FUTURE: decorative welcome panel — can be replaced with actionable content -->
+<div class="welcome-panel">
+    <div class="welcome-text">
+        <h3>{{ greeting }}, {{ g.user.full_name.split() | first }}.</h3>
+        <p class="greeting">{{ _('welcome') }} <strong>{{ _('teaching_dashboard') }}</strong>. {{ _('teacher_welcome_desc') }}</p>
+    </div>
+    <div class="welcome-illustration">
+        <img src="{{ url_for('static', filename='img/teacher-welcome.svg') }}" alt="Teaching">
+    </div>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:16px">
+    <div class="card glass-card h-100 overflow-hidden">
+        <div class="glass-accent" style="background:linear-gradient(90deg,#4B56B8,#4B56B8)"></div>
+        <div class="card-body text-center py-3">
+            <div class="glass-icon" style="background:rgba(75,86,184,0.1);color:#4B56B8"><i class="bi bi-book fs-5"></i></div>
+            <h2 class="mb-0 fw-bold" style="color:#12174F">{{ stats.course_count }}</h2>
+            <small class="text-muted">{{ _('my_courses') }}</small>
+            <div style="font-size:10px;color:#94a3b8;margin-top:1px">{{ _('this_semester') }}</div>
+        </div>
+    </div>
+    <div class="card glass-card h-100 overflow-hidden">
+        <div class="glass-accent" style="background:linear-gradient(90deg,#4A8C1C,#4A8C1C)"></div>
+        <div class="card-body text-center py-3">
+            <div class="glass-icon" style="background:rgba(74,140,28,0.1);color:#4A8C1C"><i class="bi bi-people fs-5"></i></div>
+            <h2 class="mb-0 fw-bold" style="color:#12174F">{{ stats.student_count }}</h2>
+            <small class="text-muted">{{ _('total_students') }}</small>
+            <div style="font-size:10px;color:#94a3b8;margin-top:1px">{{ _('enrolled_lower') }}</div>
+        </div>
+    </div>
+    <div class="card glass-card h-100 overflow-hidden">
+        <div class="glass-accent" style="background:linear-gradient(90deg,#4A8C1C,#4A8C1C)"></div>
+        <div class="card-body text-center py-3">
+            <div class="glass-icon" style="background:rgba(74,140,28,0.1);color:#4A8C1C"><i class="bi bi-bar-chart fs-5"></i></div>
+            <h2 class="mb-0 fw-bold" style="color:#12174F">{{ stats.class_avg }}</h2>
+            <small class="text-muted">{{ _('class_average') }}</small>
+            <div style="font-size:10px;color:#94a3b8;margin-top:1px">{{ _('across_all_courses') }}</div>
+        </div>
+    </div>
+    <div class="card glass-card h-100 overflow-hidden">
+        <div class="glass-accent" style="background:linear-gradient(90deg,#C0392B,#C0392B)"></div>
+        <div class="card-body text-center py-3">
+            <div class="glass-icon" style="background:rgba(192,57,43,0.1);color:#C0392B"><i class="bi bi-exclamation-triangle fs-5"></i></div>
+            <h2 class="mb-0 fw-bold" style="color:#12174F">{{ stats.failing }}</h2>
+            <small class="text-muted">{{ _('at_risk') }}</small>
+            <div style="font-size:10px;color:#94a3b8;margin-top:1px">{{ _('score_below_60') }}</div>
+        </div>
+    </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white d-flex align-items-center justify-content-between px-3 py-2" style="border-bottom:1px solid #e2e8f0">
+            <h6 class="mb-0 fw-bold" style="font-size:14px">{{ _('my_courses') }}</h6>
+            {% if courses %}<a href="{{ url_for('teacher.grades', course_id=courses[0].id) }}" class="card-action">{{ _('view_all') }}</a>{% endif %}
+        </div>
+        <div class="card-body p-3">
+            {% if courses %}
+            {% for c in courses %}
+            {% set cs = course_stats.get(c.id) %}
+            {% set avg_badge = 'green' if cs.avg and cs.avg >= 70 else ('amber' if cs.avg and cs.avg >= 60 else 'red') %}
+            <div class="course-row" style="border-bottom:1px solid #f1f5f9{% if loop.last %};border-bottom:none{% endif %}">
+                <div style="flex:1;min-width:0">
+                    <div style="display:flex;align-items:center;justify-content:space-between">
+                        <div>
+                            <div class="course-name" style="font-size:13px;font-weight:500;color:#12174F">{{ c.course_name }}</div>
+                            <div class="course-code" style="font-size:11px;color:#94a3b8">{{ c.course_code }} · {{ cs.enrolled }} {{ _('students')|lower }}</div>
+                        </div>
+                        <span class="badge" style="font-size:11px;padding:3px 10px;border-radius:10px;font-weight:500;background:{% if avg_badge == 'green' %}#EAF3DE;color:#27500A{% elif avg_badge == 'amber' %}#FAEEDA;color:#633806{% else %}#FCEBEB;color:#791F1F{% endif %}">{{ cs.avg }} {{ _('avg') }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="text-center py-3 text-muted" style="font-size:13px">{{ _('no_courses_assigned') }}</div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white d-flex align-items-center justify-content-between px-3 py-2" style="border-bottom:1px solid #e2e8f0">
+            <h6 class="mb-0 fw-bold" style="font-size:14px">{{ _('quick_actions') }}</h6>
+        </div>
+        <div class="card-body p-3">
+            {% if courses %}
+            {% set c0 = courses[0] %}
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <a href="{{ url_for('teacher.grades', course_id=c0.id) }}" class="btn btn-gradient w-100 py-2" style="font-size:12px;border-radius:8px"><i class="bi bi-table me-1"></i>{{ _('grades') }}</a>
+                <a href="{{ url_for('teacher.categories', course_id=c0.id) }}" class="btn btn-outline-secondary w-100 py-2" style="font-size:12px;border-radius:8px"><i class="bi bi-folder me-1"></i>{{ _('categories') }}</a>
+                <a href="{{ url_for('teacher.report', course_id=c0.id) }}" class="btn btn-outline-secondary w-100 py-2" style="font-size:12px;border-radius:8px"><i class="bi bi-file-earmark-bar-graph me-1"></i>{{ _('report') }}</a>
+                <a href="{{ url_for('teacher.export_confirm', course_id=c0.id) }}" class="btn btn-outline-secondary w-100 py-2" style="font-size:12px;border-radius:8px"><i class="bi bi-download me-1"></i>{{ _('export') }}</a>
+            </div>
+            <div style="font-size:10px;color:#94a3b8;text-align:center;margin-top:8px">{{ _('my_courses') }}: {{ c0.course_code }}</div>
+            {% else %}
+            <div class="text-center py-3 text-muted" style="font-size:13px">{{ _('no_courses_assigned') }}</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mt-0">
+    <div class="col-md-6">
+        <div class="card glass-card h-100 overflow-hidden border-0">
+            <div class="glass-accent" style="background:linear-gradient(90deg,#4B56B8,#4B56B8)"></div>
+            <div class="card-body p-3">
+                <h6 class="fw-bold mb-3" style="font-size:14px;color:#12174F"><i class="bi bi-clock-history me-1" style="color:#4B56B8"></i>{{ _('recently_used') }}</h6>
+                {% if recent_courses %}
+                <div style="display:flex;flex-direction:column;gap:6px">
+                    {% for rc in recent_courses %}
+                    <a href="{{ url_for('teacher.grades', course_id=rc.id) }}" class="text-decoration-none d-flex align-items-center gap-2 px-3 py-2" style="border-radius:8px;color:#334155;font-size:13px;transition:all .15s ease" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+                        <i class="bi bi-book" style="color:#2E3591;font-size:12px"></i>
+                        <span style="font-weight:500">{{ rc.course_code }}</span>
+                        <span class="text-muted" style="font-size:11px">— {{ rc.course_name }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-3 text-muted" style="font-size:13px">{{ _('no_recent_courses') }}</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card glass-card h-100 overflow-hidden border-0">
+            <div class="glass-accent" style="background:linear-gradient(90deg,#2E3591,#2E3591)"></div>
+            <div class="card-body p-3">
+                <h6 class="fw-bold mb-3" style="font-size:14px;color:#12174F"><i class="bi bi-bar-chart-steps me-1" style="color:#2E3591"></i>{{ _('frequently_used') }}</h6>
+                {% if freq_courses %}
+                <div style="display:flex;flex-direction:column;gap:6px">
+                    {% for fc, count in freq_courses[:5] %}
+                    <a href="{{ url_for('teacher.grades', course_id=fc.id) }}" class="text-decoration-none d-flex align-items-center gap-2 px-3 py-2" style="border-radius:8px;color:#334155;font-size:13px;transition:all .15s ease" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+                        <i class="bi bi-book" style="color:#4A8C1C;font-size:12px"></i>
+                        <span style="font-weight:500">{{ fc.course_code }}</span>
+                        <span class="text-muted" style="font-size:11px">— {{ fc.course_name }}</span>
+                        <span class="ms-auto badge" style="font-size:10px;background:rgba(46,53,145,0.12);color:#2E3591;font-weight:600">{{ count }}×</span>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-3 text-muted" style="font-size:13px">{{ _('no_freq_courses') }}</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+        </main>
+    </div>
+</div>
+{% endblock %}

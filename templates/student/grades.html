@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+{% block page_title %}{{ course.course_code }} — {{ course.course_name }}{% endblock %}
+{% block page_content %}
+{% set initials = g.user.full_name.split() | map('first') | join('') | upper %}
+<div class="dashboard-wrapper">
+    <aside class="dash-sidebar">
+        <div class="sidebar-header">
+            {% include '_logo.html' %}
+        </div>
+        <hr class="sidebar-divider">
+        <div class="menu-label">{{ _('menu') }}</div>
+        <ul class="sidebar-nav">
+            <li><a href="{{ url_for('student.dashboard') }}" class="nav-link"><i class="bi bi-speedometer2"></i>{{ _('dashboard') }}</a></li>
+            <li><a href="#" class="nav-link"><i class="bi bi-journal-text"></i>{{ _('lessons') }}</a></li>
+            <li><a href="#" class="nav-link"><i class="bi bi-calendar3"></i>{{ _('schedule') }}</a></li>
+            <li><a href="#" class="nav-link"><i class="bi bi-folder"></i>{{ _('materials') }}</a></li>
+            <li><a href="#" class="nav-link"><i class="bi bi-chat-dots"></i>{{ _('forum') }}</a></li>
+            <li><a href="#" class="nav-link"><i class="bi bi-question-circle"></i>{{ _('help') }}</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <div class="user-card">
+                <div class="avatar">{{ initials[:2] }}</div>
+                <div class="user-info">
+                    <div class="user-name">{{ g.user.full_name }}</div>
+                    <div class="user-role">{{ session.role }}</div>
+                </div>
+            </div>
+            <a href="{{ url_for('auth.profile') }}" class="sign-out"><i class="bi bi-gear"></i>{{ _('settings') }}</a>
+        </div>
+    </aside>
+    <div class="dash-main">
+        <header class="dash-topbar">
+            <div class="dash-topbar-left">
+                <h2>{{ course.course_code }} — {{ course.course_name }}</h2>
+                <span class="subtitle">{{ _('class_average_label') }} {{ klass_avg }}</span>
+            </div>
+            <div class="dash-topbar-right">
+                <div class="dropdown d-inline-block">
+                    <a href="#" class="lang-btn" data-bs-toggle="dropdown" aria-expanded="false" title="{{ _('language') }}">
+                        <i class="bi bi-globe2"></i>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item lang-dropdown-item{% if current_lang == 'en' %} active{% endif %}" href="{{ url_for('auth.set_language', lang='en') }}">EN</a></li>
+                        <li><a class="dropdown-item lang-dropdown-item{% if current_lang == 'zh' %} active{% endif %}" href="{{ url_for('auth.set_language', lang='zh') }}">中文</a></li>
+                    </ul>
+                </div>
+                <i class="bi bi-bell bell"></i>
+                <a href="{{ url_for('auth.profile') }}" class="dash-avatar" title="{{ g.user.full_name }}">{{ initials[:2] }}</a>
+                <a href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-outline-danger ms-1">{{ _('sign_out') }}</a>
+            </div>
+        </header>
+        <main class="dash-content">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for cat, msg in messages %}
+            <div class="alert alert-{{ cat }} alert-dismissible fade show py-2">{{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+            {% endfor %}
+            {% endwith %}
+
+<div class="d-flex justify-content-end align-items-center mb-3">
+    <div class="text-end">
+        <span class="display-6 fw-bold me-2">{{ total }}</span>
+        <span class="badge fs-4 bg-{% if letter == 'A' %}success{% elif letter == 'B' %}primary{% elif letter == 'C' %}warning text-dark{% elif letter == 'D' %}danger{% else %}dark{% endif %}">
+            {{ letter }}
+        </span>
+    </div>
+</div>
+
+{% for cat in cats %}
+{% set cd = cat_details|selectattr('name', 'eq', cat.category_name)|first %}
+<h5 class="mt-3">{{ cat.category_name }} <small class="text-muted">({{ cat.weight }}%)</small></h5>
+<div class="table-responsive">
+    <table class="table table-sm table-bordered">
+        <thead class="table-light">
+            <tr>
+                <th>{{ _('item_label') }}</th>
+                <th style="width:100px">{{ _('your_score') }}</th>
+                <th style="width:100px">{{ _('max_score') }}</th>
+                <th style="width:120px">{{ _('class_avg_short') }}</th>
+                <th style="width:100px">{{ _('weight_label') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items if item.category_id == cat.id %}
+            {% set sc = scores.get(item.id) %}
+            {% set ca = class_avg_per_item.get(item.id) %}
+            <tr>
+                <td>{{ item.item_name }}</td>
+                <td>
+                    {% if sc is not none %}
+                        {% if sc >= 80 %}
+                        <span class="badge bg-success">{{ sc }}</span>
+                        {% elif sc >= 60 %}
+                        <span class="badge bg-warning text-dark">{{ sc }}</span>
+                        {% else %}
+                        <span class="badge bg-danger">{{ sc }}</span>
+                        {% endif %}
+                    {% else %}
+                        <span class="text-muted">&mdash;</span>
+                    {% endif %}
+                </td>
+                <td>{{ item.max_score }}</td>
+                <td>
+                    {% if ca is not none %}
+                        {{ ca }}
+                    {% else %}
+                        <span class="text-muted">{{ _('na') }}</span>
+                    {% endif %}
+                </td>
+                <td>{{ cat.weight }}%</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr class="table-light">
+                <td colspan="2"><strong>{{ cat.category_name }} avg:</strong>
+                    {% if cd and cd.avg is not none %}
+                        {{ cd.avg }}
+                    {% else %}
+                        <span class="text-muted">{{ _('pending') }}</span>
+                    {% endif %}
+                </td>
+                <td colspan="2"><strong>{{ _('contribution') }}</strong>
+                    {% if cd and cd.weighted is not none %}
+                        {{ cd.avg }} × {{ cat.weight / 100 }} = <strong>{{ cd.weighted }}</strong>
+                    {% else %}
+                        <span class="text-muted">{{ _('pending') }}</span>
+                    {% endif %}
+                </td>
+                <td></td>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+{% endfor %}
+
+<div class="card mt-3">
+    <div class="card-body">
+        <div class="row text-center">
+            <div class="col">
+                <small class="text-muted">{{ _('overall') }}</small>
+                <div class="fw-bold fs-4">{{ total }}</div>
+            </div>
+            <div class="col">
+                <small class="text-muted">Grade</small>
+                <div><span class="badge fs-5 bg-{% if letter == 'A' %}success{% elif letter == 'B' %}primary{% elif letter == 'C' %}warning text-dark{% elif letter == 'D' %}danger{% else %}dark{% endif %}">{{ letter }}</span></div>
+            </div>
+            <div class="col">
+                <small class="text-muted">{{ _('class_avg_short') }}</small>
+                <div class="fw-bold fs-4">{{ klass_avg }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<a href="{{ url_for('student.dashboard') }}" class="btn btn-secondary mt-3">{{ _('back_to_dashboard') }}</a>
+        </main>
+    </div>
+</div>
+{% endblock %}

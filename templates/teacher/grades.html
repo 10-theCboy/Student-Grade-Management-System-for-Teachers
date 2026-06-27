@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+{% block page_title %}{{ course.course_code }} — {{ _('grade_entry') }}{% endblock %}
+{% block page_content %}
+{% set initials = g.user.full_name.split() | map('first') | join('') | upper %}
+<div class="dashboard-wrapper">
+    <aside class="dash-sidebar">
+        <div class="sidebar-header">
+            {% include '_logo.html' %}
+        </div>
+        <hr class="sidebar-divider">
+        <div class="menu-label">{{ _('menu') }}</div>
+        <ul class="sidebar-nav">
+            <li><a href="{{ url_for('teacher.dashboard') }}" class="nav-link"><i class="bi bi-speedometer2"></i>{{ _('dashboard') }}</a></li>
+            <li><a href="#" class="nav-link"><i class="bi bi-journal-text"></i>{{ _('lessons') }}</a></li>
+            <li><a href="#" class="nav-link"><i class="bi bi-calendar3"></i>{{ _('schedule') }}</a></li>
+            <li><a href="#" class="nav-link"><i class="bi bi-folder"></i>{{ _('materials') }}</a></li>
+            <li><a href="#" class="nav-link"><i class="bi bi-chat-dots"></i>{{ _('forum') }}</a></li>
+            <li><a href="#" class="nav-link"><i class="bi bi-question-circle"></i>{{ _('help') }}</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <div class="user-card">
+                <div class="avatar">{{ initials[:2] }}</div>
+                <div class="user-info">
+                    <div class="user-name">{{ g.user.full_name }}</div>
+                    <div class="user-role">{{ session.role }}</div>
+                </div>
+            </div>
+            <a href="{{ url_for('auth.profile') }}" class="sign-out"><i class="bi bi-gear"></i>{{ _('settings') }}</a>
+        </div>
+    </aside>
+    <div class="dash-main">
+        <header class="dash-topbar">
+            <div class="dash-topbar-left">
+                <h2>{{ course.course_code }} — {{ _('grade_entry') }}</h2>
+                <span class="subtitle"></span>
+            </div>
+            <div class="dash-topbar-right">
+                <div class="dropdown d-inline-block">
+                    <a href="#" class="lang-btn" data-bs-toggle="dropdown" aria-expanded="false" title="{{ _('language') }}">
+                        <i class="bi bi-globe2"></i>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item lang-dropdown-item{% if current_lang == 'en' %} active{% endif %}" href="{{ url_for('auth.set_language', lang='en') }}">{{ _('en') }}</a></li>
+                        <li><a class="dropdown-item lang-dropdown-item{% if current_lang == 'zh' %} active{% endif %}" href="{{ url_for('auth.set_language', lang='zh') }}">中文</a></li>
+                    </ul>
+                </div>
+                <i class="bi bi-bell bell"></i>
+                <a href="{{ url_for('auth.profile') }}" class="dash-avatar" title="{{ g.user.full_name }}">{{ initials[:2] }}</a>
+                <a href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-outline-danger ms-1">{{ _('sign_out') }}</a>
+            </div>
+        </header>
+        <main class="dash-content">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for cat, msg in messages %}
+            <div class="alert alert-{{ cat }} alert-dismissible fade show py-2">{{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+            {% endfor %}
+            {% endwith %}
+<form method="post">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<div class="table-responsive">
+    <table class="table table-bordered table-sm">
+        <thead class="table-dark">
+            <tr>
+                <th>{{ _('student') }}</th>
+                {% for cat in categories %}
+                <th colspan="{{ items|selectattr('category_id', 'eq', cat.id)|list|length }}" class="text-center">{{ cat.category_name }}</th>
+                {% endfor %}
+                <th>{{ _('average') }}</th>
+                <th>{{ _('grade') }}</th>
+            </tr>
+            <tr>
+                <th></th>
+                {% for item in items %}
+                <th class="text-nowrap">
+                    {{ item.item_name }}
+                    <small class="d-block text-muted fw-normal">{{ _('max_prefix') }}{{ item.max_score }}</small>
+                </th>
+                {% endfor %}
+                <th></th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in students %}
+            <tr>
+                <td class="text-nowrap">{{ s.full_name }}<br><small class="text-muted">{{ s.username }}</small></td>
+                {% for item in items %}
+                {% set sc = scores[s.id].get(item.id) if scores[s.id] else none %}
+                <td class="score-cell {% if sc is none %}missing{% else %}has-score{% endif %}">
+                    <input name="score_{{ s.id }}_{{ item.id }}" type="number" step="0.1" min="0" max="100"
+                           class="form-control form-control-sm" style="width:85px"
+                           value="{{ sc if sc is not none else '' }}">
+                </td>
+                {% endfor %}
+                <td class="text-center fw-bold">{{ averages.get(s.id, '-') }}</td>
+                <td class="text-center">
+                    {% set g = grades_map.get(s.id) %}
+                    {% if g %}
+                    <span class="badge fs-6 bg-{% if g == 'A' %}success{% elif g == 'B' %}primary{% elif g == 'C' %}warning text-dark{% elif g == 'D' %}danger{% else %}dark{% endif %}">
+                        {{ g }}
+                    </span>
+                    {% else %}
+                    -
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="{{ items|length + 2 }}"><div class="empty-state"><i class="bi bi-people"></i><p>{{ _('no_students_enrolled') }}</p></div></td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<button class="btn btn-primary btn-lg">{{ _('save_all_scores') }}</button>
+<a href="{{ url_for('teacher.dashboard') }}" class="btn btn-secondary ms-2">{{ _('back') }}</a>
+</form>
+        </main>
+    </div>
+</div>
+{% endblock %}

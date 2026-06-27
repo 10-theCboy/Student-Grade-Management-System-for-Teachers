@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+{% block page_title %}{{ _('audit_log') }}{% endblock %}
+{% block page_content %}
+{% set initials = g.user.full_name.split() | map('first') | join('') | upper %}
+<div class="dashboard-wrapper">
+    <aside class="dash-sidebar">
+        <div class="sidebar-header">{% include '_logo.html' %}</div>
+        <hr class="sidebar-divider">
+        <div class="menu-label">{{ _('menu') }}</div>
+        <ul class="sidebar-nav">
+            <li><a href="{{ url_for('admin.dashboard') }}" class="nav-link"><i class="bi bi-speedometer2"></i>{{ _('dashboard') }}</a></li>
+            <li><a href="#" class="nav-link"><i class="bi bi-journal-text"></i>{{ _('lessons') }}</a></li>
+            <li><a href="#" class="nav-link"><i class="bi bi-calendar3"></i>{{ _('schedule') }}</a></li>
+            <li><a href="#" class="nav-link"><i class="bi bi-folder"></i>{{ _('materials') }}</a></li>
+            <li><a href="#" class="nav-link"><i class="bi bi-chat-dots"></i>{{ _('forum') }}</a></li>
+            <li><a href="{{ url_for('admin.courses') }}" class="nav-link"><i class="bi bi-book"></i>{{ _('courses') }}</a></li>
+            <li><a href="{{ url_for('admin.audit_log') }}" class="nav-link active"><i class="bi bi-clock-history"></i>{{ _('audit_log') }}</a></li>
+            <li><a href="#" class="nav-link"><i class="bi bi-question-circle"></i>{{ _('help') }}</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <div class="user-card">
+                <div class="avatar"{% if g.user.avatar %} style="background-image:url({{ g.user.avatar }});background-size:cover;background-position:center;padding:0"{% endif %}>{% if not g.user.avatar %}{{ initials[:2] }}{% endif %}</div>
+                <div class="user-info">
+                    <div class="user-name">{{ g.user.full_name }}</div>
+                    <div class="user-role">{{ session.role }}</div>
+                </div>
+            </div>
+            <a href="{{ url_for('auth.profile') }}" class="sign-out"><i class="bi bi-gear"></i>{{ _('settings') }}</a>
+        </div>
+    </aside>
+    <div class="dash-main">
+        <header class="dash-topbar">
+            <div class="dash-topbar-left">
+                <h2>{{ _('audit_log') }}</h2>
+                <span class="subtitle">{{ _('track_grade_changes') }}</span>
+            </div>
+            <div class="dash-topbar-right">
+                <div class="dropdown d-inline-block">
+                    <a href="#" class="lang-btn" data-bs-toggle="dropdown" aria-expanded="false" title="{{ _('language') }}"><i class="bi bi-globe2"></i></a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item lang-dropdown-item{% if current_lang == 'en' %} active{% endif %}" href="{{ url_for('auth.set_language', lang='en') }}">EN</a></li>
+                        <li><a class="dropdown-item lang-dropdown-item{% if current_lang == 'zh' %} active{% endif %}" href="{{ url_for('auth.set_language', lang='zh') }}">中文</a></li>
+                    </ul>
+                </div>
+                <i class="bi bi-bell bell"><span class="badge-dot"></span></i>
+                <a href="{{ url_for('auth.profile') }}" class="dash-avatar" title="{{ g.user.full_name }}"{% if g.user.avatar %} style="background-image:url({{ g.user.avatar }});background-size:cover;background-position:center;padding:0"{% endif %}>{% if not g.user.avatar %}{{ initials[:2] }}{% endif %}</a>
+                <a href="{{ url_for('auth.logout') }}" class="btn-signout-top ms-1"><i class="bi bi-box-arrow-right"></i>{{ _('sign_out') }}</a>
+            </div>
+        </header>
+        <main class="dash-content">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for cat, msg in messages %}
+            <div class="alert alert-{{ cat }} alert-dismissible fade show py-2">{{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+            {% endfor %}
+            {% endwith %}
+
+<div class="card glass-card border-0 overflow-hidden mb-4">
+    <div class="glass-accent" style="background:linear-gradient(90deg,#2E3591,#2E3591)"></div>
+    <div class="card-body p-3">
+        <form method="GET" class="row g-2 align-items-end">
+            <div class="col-auto">
+                <label class="form-label small fw-semibold text-muted mb-1">{{ _('course') }}</label>
+                <select name="course_id" class="form-select" style="min-width:180px">
+                    <option value="">{{ _('all_courses_filter') }}</option>
+                    {% for c in courses %}
+                    <option value="{{ c.id }}" {% if course_filter|string==c.id|string %}selected{% endif %}>{{ c.course_code }} — {{ c.course_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-auto">
+                <label class="form-label small fw-semibold text-muted mb-1">{{ _('changed_by') }}</label>
+                <select name="teacher_id" class="form-select" style="min-width:160px">
+                    <option value="">{{ _('all_teachers_filter') }}</option>
+                    {% for t in teachers %}
+                    <option value="{{ t.id }}" {% if teacher_filter|string==t.id|string %}selected{% endif %}>{{ t.full_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-auto d-flex gap-1">
+                <button type="submit" class="btn btn-gradient"><i class="bi bi-funnel"></i> {{ _('filter') }}</button>
+                <a href="{{ url_for('admin.audit_log') }}" class="btn btn-outline-secondary"><i class="bi bi-x"></i> {{ _('clear') }}</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white d-flex align-items-center px-3 py-2" style="border-bottom:1px solid #eef2f6">
+        <h6 class="mb-0 fw-bold" style="font-size:14px"><i class="bi bi-list-check me-1" style="color:#2E3591"></i>{{ _('change_log') }}</h6>
+        <span class="ms-auto text-muted" style="font-size:12px">{{ logs|length }} {{ _('entries') }}</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table mb-0">
+                <thead>
+                    <tr>
+                        <th>{{ _('date_label') }}</th>
+                        <th>{{ _('changed_by') }}</th>
+                        <th>{{ _('student') }}</th>
+                        <th>{{ _('course') }}</th>
+                        <th>{{ _('category') }}</th>
+                        <th>{{ _('items') }}</th>
+                        <th class="text-center">{{ _('old_score') }}</th>
+                        <th class="text-center">{{ _('new_score') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td style="white-space:nowrap;font-size:12px;color:#64748b">{{ log.changed_at }}</td>
+                    <td><span class="fw-medium" style="font-size:13px;color:#1e293b">{{ log.changed_by_name }}</span></td>
+                    <td>{{ log.student_name }}</td>
+                    <td><span class="badge" style="background:rgba(75,86,184,0.08);color:#4B56B8;font-weight:500;font-size:11px">{{ log.course_name }}</span></td>
+                    <td style="font-size:12px;color:#64748b">{{ log.category_name }}</td>
+                    <td>{{ log.item_name }}</td>
+                    <td class="text-center"><span class="badge" style="background:rgba(192,57,43,0.08);color:#C0392B;font-weight:500">{{ log.old_score if log.old_score is not none else '—' }}</span></td>
+                    <td class="text-center"><span class="badge" style="background:rgba(20,165,170,0.08);color:#14A5AA;font-weight:500">{{ log.new_score }}</span></td>
+                </tr>
+                {% else %}
+                <tr><td colspan="8" class="text-center py-4 text-muted" style="font-size:13px">{{ _('no_entries_yet') }}</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+        </main>
+    </div>
+</div>
+{% endblock %}

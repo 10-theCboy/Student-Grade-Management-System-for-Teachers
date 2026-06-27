@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% block page_title %}{{ _('export_grades') }}{% endblock %}
+{% block page_content %}
+{% set initials = g.user.full_name.split() | map('first') | join('') | upper %}
+<div class="dashboard-wrapper">
+    <aside class="dash-sidebar">
+        <div class="sidebar-header">
+            {% include '_logo.html' %}
+        </div>
+        <hr class="sidebar-divider">
+        <div class="menu-label">{{ _('menu') }}</div>
+        <ul class="sidebar-nav">
+            <li><a href="{{ url_for('teacher.dashboard') }}" class="nav-link"><i class="bi bi-speedometer2"></i>{{ _('dashboard') }}</a></li>
+            <li><a href="#" class="nav-link"><i class="bi bi-journal-text"></i>{{ _('lessons') }}</a></li>
+            <li><a href="#" class="nav-link"><i class="bi bi-calendar3"></i>{{ _('schedule') }}</a></li>
+            <li><a href="#" class="nav-link"><i class="bi bi-folder"></i>{{ _('materials') }}</a></li>
+            <li><a href="#" class="nav-link"><i class="bi bi-chat-dots"></i>{{ _('forum') }}</a></li>
+            <li><a href="#" class="nav-link"><i class="bi bi-question-circle"></i>{{ _('help') }}</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <div class="user-card">
+                <div class="avatar">{{ initials[:2] }}</div>
+                <div class="user-info">
+                    <div class="user-name">{{ g.user.full_name }}</div>
+                    <div class="user-role">{{ session.role }}</div>
+                </div>
+            </div>
+            <a href="{{ url_for('auth.profile') }}" class="sign-out"><i class="bi bi-gear"></i>{{ _('settings') }}</a>
+        </div>
+    </aside>
+    <div class="dash-main">
+        <header class="dash-topbar">
+            <div class="dash-topbar-left">
+                <h2>{{ _('export_grades') }} — {{ course.course_code }}</h2>
+                <span class="subtitle"></span>
+            </div>
+            <div class="dash-topbar-right">
+                <div class="dropdown d-inline-block">
+                    <a href="#" class="lang-btn" data-bs-toggle="dropdown" aria-expanded="false" title="{{ _('language') }}">
+                        <i class="bi bi-globe2"></i>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item lang-dropdown-item{% if current_lang == 'en' %} active{% endif %}" href="{{ url_for('auth.set_language', lang='en') }}">EN</a></li>
+                        <li><a class="dropdown-item lang-dropdown-item{% if current_lang == 'zh' %} active{% endif %}" href="{{ url_for('auth.set_language', lang='zh') }}">中文</a></li>
+                    </ul>
+                </div>
+                <i class="bi bi-bell bell"></i>
+                <a href="{{ url_for('auth.profile') }}" class="dash-avatar" title="{{ g.user.full_name }}">{{ initials[:2] }}</a>
+                <a href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-outline-danger ms-1">{{ _('sign_out') }}</a>
+            </div>
+        </header>
+        <main class="dash-content">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for cat, msg in messages %}
+            <div class="alert alert-{{ cat }} alert-dismissible fade show py-2">{{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+            {% endfor %}
+            {% endwith %}
+
+<div class="card mb-3">
+    <div class="card-body">
+        <h5 class="card-title">{{ _('export_summary') }}</h5>
+        <ul class="list-unstyled">
+            <li><strong>{{ _('course') }}</strong> {{ course.course_code }} — {{ course.course_name }}</li>
+            <li><strong>{{ _('students') }}</strong> {{ num_students }} enrolled</li>
+            <li><strong>{{ _('categories') }}</strong> {{ num_categories }}</li>
+            <li><strong>{{ _('items') }}</strong> {{ num_items }}</li>
+            <li><strong>{{ _('class_average') }}</strong> {{ class_avg }}%</li>
+        </ul>
+        <p class="text-muted small">{{ _('csv_description') }}</p>
+        <a href="{{ url_for('teacher.export', course_id=course.id) }}" class="btn btn-success">
+            <i class="bi bi-download"></i> {{ _('confirm_export') }}
+        </a>
+        <a href="{{ url_for('teacher.report', course_id=course.id) }}" class="btn btn-secondary">{{ _('back') }}</a>
+    </div>
+</div>
+        </main>
+    </div>
+</div>
+{% endblock %}

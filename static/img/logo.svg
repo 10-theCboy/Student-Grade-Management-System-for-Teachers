@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 56">
+  <rect x="0" y="0" width="56" height="56" rx="14" fill="#2E3591"/>
+  <rect x="10" y="34" width="8" height="14" rx="2" fill="rgba(255,255,255,0.35)"/>
+  <rect x="22" y="24" width="8" height="24" rx="2" fill="rgba(255,255,255,0.6)"/>
+  <rect x="34" y="16" width="8" height="32" rx="2" fill="#ffffff"/>
+  <polyline points="14,34 26,25 38,17" fill="none" stroke="#4B56B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="38" cy="17" r="2.5" fill="#4B56B8"/>
+  <text x="68" y="38" font-family="Georgia, 'Times New Roman', serif" font-size="26" font-weight="700" fill="#2E3591">Grade<tspan fill="#4B56B8">MS</tspan></text>
+  <text x="68" y="50" font-family="Arial, sans-serif" font-size="9" fill="#8B93D4" letter-spacing="2.5">MANAGEMENT SYSTEM</text>
+</svg>

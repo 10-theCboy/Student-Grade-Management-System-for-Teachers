@@ -1,0 +1,218 @@
+{% extends 'base.html' %}
+{% block page_title %}{{ course.course_code }} — {{ _('categories') }}{% endblock %}
+{% block page_content %}
+{% set initials = g.user.full_name.split() | map('first') | join('') | upper %}
+<div class="dashboard-wrapper">
+    <aside class="dash-sidebar">
+        <div class="sidebar-header">
+            {% include '_logo.html' %}
+        </div>
+        <hr class="sidebar-divider">
+        <div class="menu-label">{{ _('menu') }}</div>
+        <ul class="sidebar-nav">
+            <li><a href="{{ url_for('teacher.dashboard') }}" class="nav-link"><i class="bi bi-speedometer2"></i>{{ _('dashboard') }}</a></li>
+            <li><a href="#" class="nav-link"><i class="bi bi-journal-text"></i>{{ _('lessons') }}</a></li>
+            <li><a href="#" class="nav-link"><i class="bi bi-calendar3"></i>{{ _('schedule') }}</a></li>
+            <li><a href="#" class="nav-link"><i class="bi bi-folder"></i>{{ _('materials') }}</a></li>
+            <li><a href="#" class="nav-link"><i class="bi bi-chat-dots"></i>{{ _('forum') }}</a></li>
+            <li><a href="#" class="nav-link"><i class="bi bi-question-circle"></i>{{ _('help') }}</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <div class="user-card">
+                <div class="avatar">{{ initials[:2] }}</div>
+                <div class="user-info">
+                    <div class="user-name">{{ g.user.full_name }}</div>
+                    <div class="user-role">{{ session.role }}</div>
+                </div>
+            </div>
+            <a href="{{ url_for('auth.profile') }}" class="sign-out"><i class="bi bi-gear"></i>{{ _('settings') }}</a>
+        </div>
+    </aside>
+    <div class="dash-main">
+        <header class="dash-topbar">
+            <div class="dash-topbar-left">
+                <h2>{{ course.course_code }} — {{ _('grade_categories_items') }}</h2>
+                <span class="subtitle"></span>
+            </div>
+            <div class="dash-topbar-right">
+                <div class="dropdown d-inline-block">
+                    <a href="#" class="lang-btn" data-bs-toggle="dropdown" aria-expanded="false" title="{{ _('language') }}">
+                        <i class="bi bi-globe2"></i>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item lang-dropdown-item{% if current_lang == 'en' %} active{% endif %}" href="{{ url_for('auth.set_language', lang='en') }}">{{ _('en') }}</a></li>
+                        <li><a class="dropdown-item lang-dropdown-item{% if current_lang == 'zh' %} active{% endif %}" href="{{ url_for('auth.set_language', lang='zh') }}">{{ _('zh') }}</a></li>
+                    </ul>
+                </div>
+                <i class="bi bi-bell bell"></i>
+                <a href="{{ url_for('auth.profile') }}" class="dash-avatar" title="{{ g.user.full_name }}">{{ initials[:2] }}</a>
+                <a href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-outline-danger ms-1">{{ _('sign_out') }}</a>
+            </div>
+        </header>
+        <main class="dash-content">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for cat, msg in messages %}
+            <div class="alert alert-{{ cat }} alert-dismissible fade show py-2">{{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+            {% endfor %}
+            {% endwith %}
+
+{% if locked %}
+<div class="alert alert-warning">
+    <i class="bi bi-lock-fill"></i> {{ _('grades_locked_msg') }}
+</div>
+{% endif %}
+
+<div class="card mb-3">
+    <div class="card-header fw-bold">{{ _('add_category') }}</div>
+    <div class="card-body">
+        <form method="post" class="row g-2">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="action" value="add">
+            <div class="col-md-5">
+                <input name="category_name" class="form-control" placeholder="{{ _('category_name') }}"
+                       {% if locked %}disabled{% endif %} required>
+            </div>
+            <div class="col-md-3">
+                <input name="weight" class="form-control" type="number" step="0.1"
+                       placeholder="{{ _('weight_percent') }}" {% if locked %}disabled{% endif %} required>
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-primary w-100" {% if locked %}disabled{% endif %}>{{ _('add') }}</button>
+            </div>
+            <div class="col-md-2">
+                <small class="text-muted">{{ _('remaining') }}{{ 100 - total_weight }}%</small>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header fw-bold">{{ _('categories') }}</div>
+    <div class="card-body p-0">
+        <table class="table mb-0">
+            <thead>
+                <tr>
+                    <th style="width:30%">{{ _('category') }}</th>
+                    <th style="width:10%">{{ _('weight') }}</th>
+                    <th>{{ _('item_plural') }}</th>
+                    <th style="width:200px">{{ _('actions') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for cat in categories %}
+            <tr>
+                <td><strong>{{ cat.category_name }}</strong></td>
+                <td>
+                    {{ cat.weight }}%
+                    <div class="progress mt-1" style="height:6px">
+                        <div class="progress-bar bg-info" style="width:{{ cat.weight }}%"></div>
+                    </div>
+                </td>
+                <td>
+                    <ul class="list-unstyled mb-0">
+                    {% for item in items_by_cat.get(cat.id, []) %}
+                        <li class="d-flex justify-content-between align-items-center">
+                            <span>{{ item.item_name }} <small class="text-muted">({{ _('max_prefix') }} {{ item.max_score }})</small></span>
+                            {% if not locked %}
+                            <form method="post" class="d-inline" onsubmit="return confirm('{{ _('delete') }} ' + {{ item.item_name|tojson }} + '?');">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                <input type="hidden" name="action" value="delete_item">
+                                <input type="hidden" name="item_id" value="{{ item.id }}">
+                                <button class="btn btn-sm btn-outline-danger py-0" title="{{ _('delete') }}">&times;</button>
+                            </form>
+                            {% endif %}
+                        </li>
+                    {% else %}
+                        <li class="text-muted small">{{ _('no_items') }}</li>
+                    {% endfor %}
+                    </ul>
+                    {% if not locked %}
+                    <form method="post" class="row g-1 mt-1">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <input type="hidden" name="action" value="add_item">
+                        <input type="hidden" name="cat_id" value="{{ cat.id }}">
+                        <div class="col-5"><input name="item_name" class="form-control form-control-sm" placeholder="{{ _('item_name') }}" required></div>
+                        <div class="col-3"><input name="max_score" class="form-control form-control-sm" value="100" required></div>
+                        <div class="col-4"><button class="btn btn-sm btn-outline-success w-100">{{ _('add_item') }}</button></div>
+                    </form>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if not locked %}
+                    <button class="btn btn-sm btn-warning" data-bs-toggle="modal"
+                            data-bs-target="#editModal{{ cat.id }}">{{ _('edit') }}</button>
+                    <form method="post" class="d-inline"
+                          onsubmit="return confirm('{{ _('delete') }} {{ _('category') }} ' + {{ cat.category_name|tojson }} + '?');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <input type="hidden" name="action" value="delete">
+                        <input type="hidden" name="cat_id" value="{{ cat.id }}">
+                        <button class="btn btn-sm btn-danger">{{ _('delete') }}</button>
+                    </form>
+                    {% else %}
+                    <span class="text-muted small">{{ _('locked') }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr class="table-{% if total_weight == 100 %}success{% else %}warning{% endif %}">
+                    <td><strong>{{ _('total') }}</strong></td>
+                    <td>
+                        <strong>{{ total_weight }}%</strong>
+                        <div class="progress mt-1" style="height:8px">
+                            <div class="progress-bar bg-{% if total_weight == 100 %}success{% else %}warning{% endif %}"
+                                 style="width:{{ total_weight }}%"></div>
+                        </div>
+                    </td>
+                    <td></td>
+                    <td></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+
+{% if total_weight != 100 %}
+<div class="alert alert-warning mt-2">
+    {{ _('weights_should_total') }}{{ total_weight }}%.
+    {% if not locked %}{{ _('add_or_edit_categories') }}{% endif %}
+</div>
+{% endif %}
+
+<a href="{{ url_for('teacher.dashboard') }}" class="btn btn-secondary mt-2">{{ _('back') }}</a>
+
+{% for cat in categories %}
+<div class="modal fade" id="editModal{{ cat.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <form method="post" class="modal-content">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="action" value="edit">
+            <input type="hidden" name="cat_id" value="{{ cat.id }}">
+            <div class="modal-header">
+                <h5 class="modal-title">{{ _('edit_category') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">{{ _('category_name') }}</label>
+                    <input name="category_name" class="form-control" value="{{ cat.category_name }}" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ _('weight_percentage') }}</label>
+                    <input name="weight" class="form-control" type="number" step="0.1" value="{{ cat.weight }}" required>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('cancel') }}</button>
+                <button class="btn btn-primary">{{ _('save') }}</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endfor %}
+
+        </main>
+    </div>
+</div>
+{% endblock %}
