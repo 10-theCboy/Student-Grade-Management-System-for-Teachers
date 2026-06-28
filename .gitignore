@@ -4,3 +4,5 @@ __pycache__/
 .pytest_cache/
 *.db-journal
 .vscode/
+-Context
+tests/test_results.txt
