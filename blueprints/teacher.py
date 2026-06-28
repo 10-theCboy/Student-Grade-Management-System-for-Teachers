@@ -75,11 +75,21 @@ def dashboard():
             'avg': course_avg,
             'enrolled': len(enrolled_ids)
         }
+    dist = {'A': 0, 'B': 0, 'C': 0, 'D': 0, 'F': 0}
+    for t in totals:
+        if t >= 90: dist['A'] += 1
+        elif t >= 80: dist['B'] += 1
+        elif t >= 70: dist['C'] += 1
+        elif t >= 60: dist['D'] += 1
+        else: dist['F'] += 1
+    dist_max = max(dist.values()) or 1
     stats = {
         'course_count': len(courses),
         'student_count': unique_students,
         'failing': failing,
         'class_avg': class_avg,
+        'grade_dist': dist,
+        'dist_max': dist_max,
     }
     course_map = {c['id']: c for c in courses}
     recent_ids = session.get('recent_courses', [])
@@ -190,7 +200,8 @@ def categories(course_id):
     items_by_cat = {}
     for cat in cats:
         items_by_cat[cat['id']] = items_for_category(cat['id'])
-    return render_template('teacher/categories.html', course=course, categories=cats, items_by_cat=items_by_cat, total_weight=total_weight(course_id), locked=locked)
+    courses = find_by_teacher(g.user['id'])
+    return render_template('teacher/categories.html', course=course, categories=cats, items_by_cat=items_by_cat, total_weight=total_weight(course_id), locked=locked, courses=courses)
 
 
 @teacher_bp.route('/courses/<int:course_id>/grades', methods=['GET', 'POST'])
@@ -254,7 +265,8 @@ def grades(course_id):
         avg = calculate_weighted_average(s['id'], course_id)
         averages[s['id']] = avg
         grades_map[s['id']] = letter_grade(avg)
-    return render_template('teacher/grades.html', course=course, students=students, categories=cats, items=items, scores=scores, averages=averages, grades_map=grades_map)
+    courses = find_by_teacher(g.user['id'])
+    return render_template('teacher/grades.html', course=course, students=students, categories=cats, items=items, scores=scores, averages=averages, grades_map=grades_map, courses=courses)
 
 
 @teacher_bp.route('/courses/<int:course_id>/report')
@@ -267,7 +279,8 @@ def report(course_id):
         return redirect(url_for('teacher.dashboard'))
     track_course_access(course_id)
     stats = class_statistics(course_id)
-    return render_template('teacher/report.html', course=course, **stats)
+    courses = find_by_teacher(g.user['id'])
+    return render_template('teacher/report.html', course=course, courses=courses, **stats)
 
 
 @teacher_bp.route('/courses/<int:course_id>/export/confirm')
@@ -286,9 +299,11 @@ def export_confirm(course_id):
     cats = categories_for_course(course_id)
     items = items_for_course(course_id)
     students = enrolled_students(course_id)
+    courses = find_by_teacher(g.user['id'])
     return render_template('teacher/export_confirm.html', course=course,
                            num_students=len(students), num_categories=len(cats),
-                           num_items=len(items), class_avg=stats['avg'])
+                           items=items, cats=cats,
+                           num_items=len(items), class_avg=stats['avg'], courses=courses)
 
 
 @teacher_bp.route('/courses/<int:course_id>/export')

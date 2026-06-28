@@ -11,6 +11,27 @@
         <div class="menu-label">{{ _('menu') }}</div>
         <ul class="sidebar-nav">
             <li><a href="{{ url_for('teacher.dashboard') }}" class="nav-link"><i class="bi bi-speedometer2"></i>{{ _('dashboard') }}</a></li>
+            <li>
+                <div class="nav-link-collapse d-flex align-items-center justify-content-between" onclick="toggleCourseList()" style="cursor:pointer;padding:0.45rem 0.75rem;border-radius:8px;margin-bottom:2px;transition:background 0.15s">
+                    <span><i class="bi bi-book me-2"></i>{{ _('my_courses') }}</span>
+                    <span id="courseToggleIcon" class="course-toggle-icon">+</span>
+                </div>
+                <div id="courseList" style="display:none;overflow:hidden;transition:max-height 0.25s ease">
+                    {% for c in courses %}
+                    <div class="d-flex align-items-center sidebar-course-item">
+                        <a href="{{ url_for('teacher.grades', course_id=c.id) }}" class="nav-link{% if c.id == course.id %} active{% endif %}" style="font-size:12px;padding:0.3rem 0;flex:1;min-width:0;background:transparent!important;gap:6px"><i class="bi bi-book" style="font-size:12px"></i>{{ c.course_code }}</a>
+                        <div class="course-actions">
+                            <a href="{{ url_for('teacher.report', course_id=c.id) }}" class="course-action-icon" title="{{ _('reports') }}"><i class="bi bi-bar-chart"></i></a>
+                            <a href="{{ url_for('teacher.export_confirm', course_id=c.id) }}" class="course-action-icon" title="{{ _('export_csv') }}"><i class="bi bi-download"></i></a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </li>
+            <li><a href="{{ url_for('teacher.grades', course_id=course.id) }}" class="nav-link"><i class="bi bi-pencil-square"></i>{{ _('grade_entry') }}</a></li>
+            <li><a href="{{ url_for('teacher.report', course_id=course.id) }}" class="nav-link"><i class="bi bi-file-earmark-bar-graph"></i>{{ _('reports') }}</a></li>
+            <li><a href="{{ url_for('teacher.export_confirm', course_id=course.id) }}" class="nav-link"><i class="bi bi-download"></i>{{ _('export_csv') }}</a></li>
+            <!-- FUTURE: placeholder nav items -->
             <li><a href="#" class="nav-link"><i class="bi bi-journal-text"></i>{{ _('lessons') }}</a></li>
             <li><a href="#" class="nav-link"><i class="bi bi-calendar3"></i>{{ _('schedule') }}</a></li>
             <li><a href="#" class="nav-link"><i class="bi bi-folder"></i>{{ _('materials') }}</a></li>
@@ -19,7 +40,7 @@
         </ul>
         <div class="sidebar-footer">
             <div class="user-card">
-                <div class="avatar">{{ initials[:2] }}</div>
+                <div class="avatar"{% if g.user.avatar %} style="background-image:url({{ g.user.avatar }});background-size:cover;background-position:center;background-origin:content-box;padding:0"{% endif %}>{% if not g.user.avatar %}{{ initials[:2] }}{% endif %}</div>
                 <div class="user-info">
                     <div class="user-name">{{ g.user.full_name }}</div>
                     <div class="user-role">{{ session.role }}</div>
@@ -35,18 +56,11 @@
                 <span class="subtitle"></span>
             </div>
             <div class="dash-topbar-right">
-                <div class="dropdown d-inline-block">
-                    <a href="#" class="lang-btn" data-bs-toggle="dropdown" aria-expanded="false" title="{{ _('language') }}">
-                        <i class="bi bi-globe2"></i>
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item lang-dropdown-item{% if current_lang == 'en' %} active{% endif %}" href="{{ url_for('auth.set_language', lang='en') }}">{{ _('en') }}</a></li>
-                        <li><a class="dropdown-item lang-dropdown-item{% if current_lang == 'zh' %} active{% endif %}" href="{{ url_for('auth.set_language', lang='zh') }}">{{ _('zh') }}</a></li>
-                    </ul>
-                </div>
+                {% set btn_class = 'lang-btn' %}
+                {% include '_lang_switcher.html' %}
                 <i class="bi bi-bell bell"></i>
                 <a href="{{ url_for('auth.profile') }}" class="dash-avatar" title="{{ g.user.full_name }}">{{ initials[:2] }}</a>
-                <a href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-outline-danger ms-1">{{ _('sign_out') }}</a>
+                <a href="{{ url_for('auth.logout') }}" class="btn-signout-top ms-1"><i class="bi bi-box-arrow-right"></i>{{ _('sign_out') }}</a>
             </div>
         </header>
         <main class="dash-content">
@@ -55,7 +69,7 @@
             <div class="alert alert-{{ cat }} alert-dismissible fade show py-2">{{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
             {% endfor %}
             {% endwith %}
-
+<a href="{{ url_for('teacher.dashboard') }}" class="btn-back mb-2"><i class="bi bi-arrow-left"></i></a>
 {% if locked %}
 <div class="alert alert-warning">
     <i class="bi bi-lock-fill"></i> {{ _('grades_locked_msg') }}
@@ -105,7 +119,7 @@
                 <td>
                     {{ cat.weight }}%
                     <div class="progress mt-1" style="height:6px">
-                        <div class="progress-bar bg-info" style="width:{{ cat.weight }}%"></div>
+                        <div class="progress-bar" style="width:{{ cat.weight }}%;background:#4B56B8;color:#fff"></div>
                     </div>
                 </td>
                 <td>
@@ -133,7 +147,7 @@
                         <input type="hidden" name="cat_id" value="{{ cat.id }}">
                         <div class="col-5"><input name="item_name" class="form-control form-control-sm" placeholder="{{ _('item_name') }}" required></div>
                         <div class="col-3"><input name="max_score" class="form-control form-control-sm" value="100" required></div>
-                        <div class="col-4"><button class="btn btn-sm btn-outline-success w-100">{{ _('add_item') }}</button></div>
+                        <div class="col-4"><button class="btn btn-sm btn-outline-primary w-100">{{ _('add_item') }}</button></div>
                     </form>
                     {% endif %}
                 </td>
@@ -215,4 +229,36 @@
         </main>
     </div>
 </div>
+<script>
+function toggleCourseList() {
+    var list = document.getElementById('courseList');
+    var icon = document.getElementById('courseToggleIcon');
+    if (list.style.display === 'none' || list.style.display === '') {
+        list.style.display = 'block';
+        icon.textContent = '\u2212';
+        icon.style.fontWeight = '700';
+        try { localStorage.setItem('courseListOpen', '1'); } catch(e) {}
+    } else {
+        list.style.display = 'none';
+        icon.textContent = '+';
+        try { localStorage.setItem('courseListOpen', '0'); } catch(e) {}
+    }
+}
+(function() {
+    var el = document.getElementById('courseList');
+    var ic = document.getElementById('courseToggleIcon');
+    if (!el || !ic) return;
+    if (el.querySelector('.nav-link.active')) {
+        el.style.display = 'block';
+        ic.textContent = '\u2212';
+        ic.style.fontWeight = '700';
+    } else try {
+        if (localStorage.getItem('courseListOpen') === '1') {
+            el.style.display = 'block';
+            ic.textContent = '\u2212';
+            ic.style.fontWeight = '700';
+        }
+    } catch(e) {}
+})();
+</script>
 {% endblock %}

@@ -1,0 +1,10 @@
+<div class="dropdown d-inline-block lang-switcher">
+    <a href="#" class="{{ btn_class }}" data-bs-toggle="dropdown" aria-expanded="false" title="{{ _('language') }}">
+        <i class="bi bi-globe2 lang-globe"></i>
+        <span class="lang-current">{{ 'EN' if current_lang == 'en' else '中文' }}</span>
+    </a>
+    <ul class="dropdown-menu dropdown-menu-end lang-dropdown">
+        <li><a class="dropdown-item lang-item{% if current_lang == 'en' %} active{% endif %}" href="{{ url_for('auth.set_language', lang='en') }}"><span class="lang-flag">🇺🇸</span> English{% if current_lang == 'en' %} <i class="bi bi-check-lg lang-check"></i>{% endif %}</a></li>
+        <li><a class="dropdown-item lang-item{% if current_lang == 'zh' %} active{% endif %}" href="{{ url_for('auth.set_language', lang='zh') }}"><span class="lang-flag">🇨🇳</span> 中文{% if current_lang == 'zh' %} <i class="bi bi-check-lg lang-check"></i>{% endif %}</a></li>
+    </ul>
+</div>

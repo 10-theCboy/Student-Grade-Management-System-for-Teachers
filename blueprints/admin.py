@@ -55,7 +55,8 @@ def dashboard():
         LEFT JOIN users u ON c.teacher_id=u.id
         ORDER BY c.course_code
     ''').fetchall()
-    return render_template('admin/dashboard.html', stats=stats, recent_logs=recent_logs, courses_data=courses_data)
+    courses = g.db.execute("SELECT id, course_code, course_name FROM courses ORDER BY course_code").fetchall()
+    return render_template('admin/dashboard.html', stats=stats, recent_logs=recent_logs, courses_data=courses_data, courses=courses)
 
 
 @admin_bp.route('/courses', methods=['GET', 'POST'])
@@ -116,7 +117,8 @@ def edit_course(course_id):
             flash('Course updated.', 'success')
             return redirect(url_for('admin.courses'))
     teachers = all_teachers()
-    return render_template('admin/edit_course.html', course=course, teachers=teachers)
+    courses = g.db.execute("SELECT id, course_code, course_name FROM courses ORDER BY course_code").fetchall()
+    return render_template('admin/edit_course.html', course=course, teachers=teachers, courses=courses)
 
 
 @admin_bp.route('/courses/<int:course_id>/enrollments', methods=['GET', 'POST'])
@@ -157,7 +159,8 @@ def enrollments_route(course_id):
                     cat_avg = sum(cat_scores) / len(cat_scores)
                     total += cat_avg * (cat['weight'] / 100.0)
         grades[s['id']] = round(total, 1)
-    return render_template('admin/enrollments.html', course=course, enrolled=enrolled, available=available, grades=grades)
+    courses = g.db.execute("SELECT id, course_code, course_name FROM courses ORDER BY course_code").fetchall()
+    return render_template('admin/enrollments.html', course=course, enrolled=enrolled, available=available, grades=grades, courses=courses)
 
 
 @admin_bp.route('/audit-log')

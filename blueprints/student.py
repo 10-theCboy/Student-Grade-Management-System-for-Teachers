@@ -156,6 +156,12 @@ def course_grades(course_id):
         totals = [calculate_weighted_average(sid, course_id) for sid in enrolled_ids]
         klass_avg = round(sum(totals) / len(totals), 1)
 
+    courses = find_by_student(g.user['id'])
+    course_data = []
+    for c in courses:
+        avg = calculate_weighted_average(g.user['id'], c['id'])
+        course_data.append({'course': c, 'average': avg, 'grade': letter_grade(avg)})
     return render_template('student/grades.html', course=course, cats=cats, items=items, scores=scores,
                            cat_details=cat_details, total=total, letter=letter,
-                           klass_avg=klass_avg, class_avg_per_item=class_avg_per_item)
+                           klass_avg=klass_avg, class_avg_per_item=class_avg_per_item,
+                           course_data=course_data)

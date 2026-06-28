@@ -15,6 +15,17 @@
             <li><a href="#" class="nav-link"><i class="bi bi-calendar3"></i>{{ _('schedule') }}</a></li>
             <li><a href="#" class="nav-link"><i class="bi bi-folder"></i>{{ _('materials') }}</a></li>
             <li><a href="#" class="nav-link"><i class="bi bi-chat-dots"></i>{{ _('forum') }}</a></li>
+            <li>
+                <div class="nav-link-collapse d-flex align-items-center justify-content-between" onclick="toggleCourseList()" style="cursor:pointer;padding:0.45rem 0.75rem;border-radius:8px;margin-bottom:2px;transition:background 0.15s">
+                    <span><i class="bi bi-book me-2"></i>{{ _('my_courses') }}</span>
+                    <span id="courseToggleIcon" class="course-toggle-icon">+</span>
+                </div>
+                <div id="courseList" style="display:none;overflow:hidden;transition:max-height 0.25s ease">
+                    {% for cd in course_data %}
+                    <a href="{{ url_for('student.course_grades', course_id=cd.course.id) }}" class="nav-link{% if cd.course.id == course.id %} active{% endif %}" style="font-size:12px;padding:0.35rem 0.75rem 0.35rem 2.4rem"><i class="bi bi-book" style="font-size:12px"></i>{{ cd.course.course_code }}</a>
+                    {% endfor %}
+                </div>
+            </li>
             <li><a href="#" class="nav-link"><i class="bi bi-question-circle"></i>{{ _('help') }}</a></li>
         </ul>
         <div class="sidebar-footer">
@@ -35,18 +46,11 @@
                 <span class="subtitle">{{ _('class_average_label') }} {{ klass_avg }}</span>
             </div>
             <div class="dash-topbar-right">
-                <div class="dropdown d-inline-block">
-                    <a href="#" class="lang-btn" data-bs-toggle="dropdown" aria-expanded="false" title="{{ _('language') }}">
-                        <i class="bi bi-globe2"></i>
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item lang-dropdown-item{% if current_lang == 'en' %} active{% endif %}" href="{{ url_for('auth.set_language', lang='en') }}">EN</a></li>
-                        <li><a class="dropdown-item lang-dropdown-item{% if current_lang == 'zh' %} active{% endif %}" href="{{ url_for('auth.set_language', lang='zh') }}">中文</a></li>
-                    </ul>
-                </div>
+                {% set btn_class = 'lang-btn' %}
+                {% include '_lang_switcher.html' %}
                 <i class="bi bi-bell bell"></i>
                 <a href="{{ url_for('auth.profile') }}" class="dash-avatar" title="{{ g.user.full_name }}">{{ initials[:2] }}</a>
-                <a href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-outline-danger ms-1">{{ _('sign_out') }}</a>
+                <a href="{{ url_for('auth.logout') }}" class="btn-signout-top ms-1"><i class="bi bi-box-arrow-right"></i>{{ _('sign_out') }}</a>
             </div>
         </header>
         <main class="dash-content">
@@ -55,105 +59,157 @@
             <div class="alert alert-{{ cat }} alert-dismissible fade show py-2">{{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
             {% endfor %}
             {% endwith %}
+<a href="{{ url_for('student.dashboard') }}" class="btn-back mb-2"><i class="bi bi-arrow-left"></i></a>
 
-<div class="d-flex justify-content-end align-items-center mb-3">
-    <div class="text-end">
-        <span class="display-6 fw-bold me-2">{{ total }}</span>
-        <span class="badge fs-4 bg-{% if letter == 'A' %}success{% elif letter == 'B' %}primary{% elif letter == 'C' %}warning text-dark{% elif letter == 'D' %}danger{% else %}dark{% endif %}">
-            {{ letter }}
-        </span>
-    </div>
-</div>
+{% set grade_colors = {'A':'#14A5AA','B':'#4B56B8','C':'#2E3591','D':'#C0392B','F':'#991b1b'} %}
+{% set grade_bgs = {'A':'rgba(20,165,170,0.1)','B':'rgba(75,86,184,0.1)','C':'rgba(46,53,145,0.1)','D':'rgba(192,57,43,0.1)','F':'rgba(153,27,27,0.1)'} %}
 
-{% for cat in cats %}
-{% set cd = cat_details|selectattr('name', 'eq', cat.category_name)|first %}
-<h5 class="mt-3">{{ cat.category_name }} <small class="text-muted">({{ cat.weight }}%)</small></h5>
-<div class="table-responsive">
-    <table class="table table-sm table-bordered">
-        <thead class="table-light">
-            <tr>
-                <th>{{ _('item_label') }}</th>
-                <th style="width:100px">{{ _('your_score') }}</th>
-                <th style="width:100px">{{ _('max_score') }}</th>
-                <th style="width:120px">{{ _('class_avg_short') }}</th>
-                <th style="width:100px">{{ _('weight_label') }}</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for item in items if item.category_id == cat.id %}
-            {% set sc = scores.get(item.id) %}
-            {% set ca = class_avg_per_item.get(item.id) %}
-            <tr>
-                <td>{{ item.item_name }}</td>
-                <td>
-                    {% if sc is not none %}
-                        {% if sc >= 80 %}
-                        <span class="badge bg-success">{{ sc }}</span>
-                        {% elif sc >= 60 %}
-                        <span class="badge bg-warning text-dark">{{ sc }}</span>
-                        {% else %}
-                        <span class="badge bg-danger">{{ sc }}</span>
-                        {% endif %}
-                    {% else %}
-                        <span class="text-muted">&mdash;</span>
-                    {% endif %}
-                </td>
-                <td>{{ item.max_score }}</td>
-                <td>
-                    {% if ca is not none %}
-                        {{ ca }}
-                    {% else %}
-                        <span class="text-muted">{{ _('na') }}</span>
-                    {% endif %}
-                </td>
-                <td>{{ cat.weight }}%</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-        <tfoot>
-            <tr class="table-light">
-                <td colspan="2"><strong>{{ cat.category_name }} avg:</strong>
-                    {% if cd and cd.avg is not none %}
-                        {{ cd.avg }}
-                    {% else %}
-                        <span class="text-muted">{{ _('pending') }}</span>
-                    {% endif %}
-                </td>
-                <td colspan="2"><strong>{{ _('contribution') }}</strong>
-                    {% if cd and cd.weighted is not none %}
-                        {{ cd.avg }} × {{ cat.weight / 100 }} = <strong>{{ cd.weighted }}</strong>
-                    {% else %}
-                        <span class="text-muted">{{ _('pending') }}</span>
-                    {% endif %}
-                </td>
-                <td></td>
-            </tr>
-        </tfoot>
-    </table>
-</div>
-{% endfor %}
-
-<div class="card mt-3">
-    <div class="card-body">
-        <div class="row text-center">
-            <div class="col">
-                <small class="text-muted">{{ _('overall') }}</small>
-                <div class="fw-bold fs-4">{{ total }}</div>
+<div class="card glass-card overflow-hidden border-0 mb-3">
+    <div class="glass-accent" style="background:linear-gradient(90deg,{{ grade_colors[letter] }},{{ grade_colors[letter] }})"></div>
+    <div class="card-body p-3">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+            <div>
+                <div style="font-size:11px;color:{{ grade_colors[letter] }};font-weight:600;text-transform:uppercase;letter-spacing:0.5px">{{ _('overall') }}</div>
+                <div style="font-size:28px;font-weight:800;color:#12174F;line-height:1.2">{{ total }}</div>
+                <div style="font-size:11px;color:#64748b">{{ _('class_average_label') }} {{ klass_avg }}</div>
             </div>
-            <div class="col">
-                <small class="text-muted">Grade</small>
-                <div><span class="badge fs-5 bg-{% if letter == 'A' %}success{% elif letter == 'B' %}primary{% elif letter == 'C' %}warning text-dark{% elif letter == 'D' %}danger{% else %}dark{% endif %}">{{ letter }}</span></div>
-            </div>
-            <div class="col">
-                <small class="text-muted">{{ _('class_avg_short') }}</small>
-                <div class="fw-bold fs-4">{{ klass_avg }}</div>
+            <div style="text-align:center">
+                <div style="width:56px;height:56px;border-radius:50%;background:{{ grade_bgs[letter] }};display:flex;align-items:center;justify-content:center">
+                    <span style="font-size:22px;font-weight:800;color:{{ grade_colors[letter] }}">{{ letter }}</span>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<a href="{{ url_for('student.dashboard') }}" class="btn btn-secondary mt-3">{{ _('back_to_dashboard') }}</a>
+{% for cat in cats %}
+{% set cd = cat_details|selectattr('name', 'eq', cat.category_name)|first %}
+{% set cat_grade = 'A' if cd and cd.avg and cd.avg >= 90 else ('B' if cd and cd.avg and cd.avg >= 80 else ('C' if cd and cd.avg and cd.avg >= 70 else ('D' if cd and cd.avg and cd.avg >= 60 else 'F'))) %}
+<div class="card glass-card overflow-hidden border-0 mb-3">
+    <div class="glass-accent" style="background:linear-gradient(90deg,{{ grade_colors[cat_grade] if cd and cd.avg else '#94a3b8' }},{{ grade_colors[cat_grade] if cd and cd.avg else '#94a3b8' }})"></div>
+    <div class="card-body p-0">
+        <div class="px-3 pt-3 pb-2 d-flex align-items-center justify-content-between" style="border-bottom:1px solid #f1f5f9">
+            <div>
+                <strong style="font-size:14px;color:#12174F">{{ cat.category_name }}</strong>
+                <span class="ms-2 badge" style="font-size:10px;background:rgba(0,0,0,0.05);color:#64748b;font-weight:500">{{ cat.weight }}%</span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                {% if cd and cd.avg is not none %}
+                <span style="font-size:13px;font-weight:600;color:#12174F">{{ cd.avg }}</span>
+                <span class="grade-pill {{ cat_grade }}" style="width:20px;height:20px;font-size:9px">{{ cat_grade }}</span>
+                {% else %}
+                <span class="text-muted" style="font-size:12px">{{ _('pending') }}</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table student-grade-table mb-0">
+                <thead>
+                    <tr>
+                        <th>{{ _('item_label') }}</th>
+                        <th style="width:80px">{{ _('your_score') }}</th>
+                        <th style="width:70px">{{ _('max_score') }}</th>
+                        <th style="width:80px">{{ _('class_avg_short') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items if item.category_id == cat.id %}
+                    {% set sc = scores.get(item.id) %}
+                    {% set ca = class_avg_per_item.get(item.id) %}
+                    <tr>
+                        <td class="item-name">{{ item.item_name }}</td>
+                        <td>
+                            {% if sc is not none %}
+                            <span class="score-badge" style="background:{% if sc >= 80 %}#14A5AA{% elif sc >= 60 %}#FAEEDA{% else %}#FCEBEB{% endif %};color:{% if sc >= 80 %}#fff{% elif sc >= 60 %}#633806{% else %}#791F1F{% endif %}">{{ sc }}</span>
+                            {% else %}
+                            <span class="text-muted">&mdash;</span>
+                            {% endif %}
+                        </td>
+                        <td style="color:#64748b;font-size:13px">{{ item.max_score }}</td>
+                        <td>
+                            {% if ca is not none %}
+                            <span style="font-weight:500;color:#2E3591">{{ ca }}</span>
+                            {% else %}
+                            <span class="text-muted">{{ _('na') }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="2"><strong style="font-size:12px;color:#12174F">{{ cat.category_name }} avg:</strong>
+                            {% if cd and cd.avg is not none %}
+                            <span style="font-weight:600;color:#2E3591">{{ cd.avg }}</span>
+                            {% else %}
+                            <span class="text-muted">{{ _('pending') }}</span>
+                            {% endif %}
+                        </td>
+                        <td colspan="2"><strong style="font-size:12px;color:#12174F">{{ _('contribution') }}</strong>
+                            {% if cd and cd.weighted is not none %}
+                            <span style="color:#64748b;font-size:12px">{{ cd.avg }} × {{ cat.weight / 100 }} =</span>
+                            <span style="font-weight:700;color:{{ grade_colors[cat_grade] }}">{{ cd.weighted }}</span>
+                            {% else %}
+                            <span class="text-muted">{{ _('pending') }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
         </main>
     </div>
 </div>
+<style>
+.grade-pill { display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;font-size:11px;font-weight:600 }
+.grade-pill.A { background:#EAF3DE;color:#27500A }
+.grade-pill.B { background:#E0F7F8;color:#0D4A4C }
+.grade-pill.C { background:#FAEEDA;color:#633806 }
+.grade-pill.D { background:#FAEEDA;color:#633806 }
+.grade-pill.F { background:#FCEBEB;color:#791F1F }
+.student-grade-table { font-size:13px;margin:0 }
+.student-grade-table thead th { font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.3px;background:rgba(0,0,0,0.02);border-bottom:1px solid #e2e8f0;padding:8px 12px }
+.student-grade-table tbody td { padding:7px 12px;border-bottom:1px solid #f1f5f9;vertical-align:middle }
+.student-grade-table tbody tr:hover { background:rgba(0,0,0,0.02) }
+.student-grade-table tbody tr:last-child td { border-bottom:none }
+.student-grade-table tfoot td { padding:8px 12px;background:rgba(0,0,0,0.02);border-top:1px solid #e2e8f0;font-size:12px }
+.student-grade-table .item-name { font-weight:500;color:#334155 }
+.score-badge { display:inline-flex;align-items:center;justify-content:center;min-width:32px;padding:2px 8px;border-radius:6px;font-size:13px;font-weight:600 }
+</style>
+<script>
+function toggleCourseList() {
+    var list = document.getElementById('courseList');
+    var icon = document.getElementById('courseToggleIcon');
+    if (list.style.display === 'none' || list.style.display === '') {
+        list.style.display = 'block';
+        icon.textContent = '\u2212';
+        icon.style.fontWeight = '700';
+        try { localStorage.setItem('courseListOpen', '1'); } catch(e) {}
+    } else {
+        list.style.display = 'none';
+        icon.textContent = '+';
+        try { localStorage.setItem('courseListOpen', '0'); } catch(e) {}
+    }
+}
+(function() {
+    var el = document.getElementById('courseList');
+    var ic = document.getElementById('courseToggleIcon');
+    if (!el || !ic) return;
+    if (el.querySelector('.nav-link.active')) {
+        el.style.display = 'block';
+        ic.textContent = '\u2212';
+        ic.style.fontWeight = '700';
+    } else try {
+        if (localStorage.getItem('courseListOpen') === '1') {
+            el.style.display = 'block';
+            ic.textContent = '\u2212';
+            ic.style.fontWeight = '700';
+        }
+    } catch(e) {}
+})();
+</script>
 {% endblock %}

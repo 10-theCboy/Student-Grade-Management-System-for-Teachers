@@ -176,7 +176,23 @@ def profile():
                 flash(t.get('invalid_password', 'Current password is incorrect.'), 'danger')
         return redirect(url_for('auth.profile'))
 
-    return render_template('profile.html', user=user)
+    from models.course import find_by_student, find_by_teacher
+    courses_data = None
+    teacher_courses = None
+    admin_courses = None
+    if session.get('role') == 'student':
+        courses_list = find_by_student(session['user_id'])
+        courses_data = []
+        for c in courses_list:
+            from services.grade_service import calculate_weighted_average, letter_grade
+            avg = calculate_weighted_average(session['user_id'], c['id'])
+            courses_data.append({'course': c, 'average': avg, 'grade': letter_grade(avg)})
+    elif session.get('role') == 'teacher':
+        teacher_courses = find_by_teacher(session['user_id'])
+    elif session.get('role') == 'admin':
+        admin_courses = g.db.execute("SELECT id, course_code, course_name FROM courses ORDER BY course_code").fetchall()
+    return render_template('profile.html', user=user, course_data=courses_data,
+                           courses=teacher_courses, admin_courses=admin_courses)
 
 
 @auth_bp.route('/logout')

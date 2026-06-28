@@ -12,7 +12,23 @@
         <div class="menu-label">{{ _('menu') }}</div>
         <ul class="sidebar-nav">
             <li><a href="{{ url_for('teacher.dashboard') }}" class="nav-link active"><i class="bi bi-speedometer2"></i>{{ _('dashboard') }}</a></li>
-            <li><a href="{{ url_for('teacher.dashboard') }}" class="nav-link"><i class="bi bi-book"></i>{{ _('my_courses') }}</a></li>
+            <li>
+                <div class="nav-link-collapse d-flex align-items-center justify-content-between" onclick="toggleCourseList()" style="cursor:pointer;padding:0.45rem 0.75rem;border-radius:8px;margin-bottom:2px;transition:background 0.15s">
+                    <span><i class="bi bi-book me-2"></i>{{ _('my_courses') }}</span>
+                    <span id="courseToggleIcon" class="course-toggle-icon">+</span>
+                </div>
+                <div id="courseList" style="display:none;overflow:hidden;transition:max-height 0.25s ease">
+                    {% for c in courses %}
+                    <div class="d-flex align-items-center sidebar-course-item">
+                        <a href="{{ url_for('teacher.grades', course_id=c.id) }}" class="nav-link" style="font-size:12px;padding:0.3rem 0;flex:1;min-width:0;background:transparent!important;gap:6px"><i class="bi bi-book" style="font-size:12px"></i>{{ c.course_code }}</a>
+                        <div class="course-actions">
+                            <a href="{{ url_for('teacher.report', course_id=c.id) }}" class="course-action-icon" title="{{ _('reports') }}"><i class="bi bi-bar-chart"></i></a>
+                            <a href="{{ url_for('teacher.export_confirm', course_id=c.id) }}" class="course-action-icon" title="{{ _('export_csv') }}"><i class="bi bi-download"></i></a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </li>
             <li><a href="{{ url_for('teacher.grades', course_id=courses[0].id) if courses else '#' }}" class="nav-link"><i class="bi bi-pencil-square"></i>{{ _('grade_entry') }}</a></li>
             <li><a href="{{ url_for('teacher.report', course_id=courses[0].id) if courses else '#' }}" class="nav-link"><i class="bi bi-file-earmark-bar-graph"></i>{{ _('reports') }}</a></li>
             <li><a href="{{ url_for('teacher.export_confirm', course_id=courses[0].id) if courses else '#' }}" class="nav-link"><i class="bi bi-download"></i>{{ _('export_csv') }}</a></li>
@@ -21,10 +37,6 @@
             <li><a href="#" class="nav-link"><i class="bi bi-calendar3"></i>{{ _('schedule') }}</a></li>
             <li><a href="#" class="nav-link"><i class="bi bi-folder"></i>{{ _('materials') }}</a></li>
             <li><a href="#" class="nav-link"><i class="bi bi-chat-dots"></i>{{ _('forum') }}</a></li>
-            <li class="menu-label" style="padding:0.75rem 0.75rem 0.25rem;color:rgba(255,255,255,0.35);font-size:10px;text-transform:uppercase;letter-spacing:1px;font-weight:600;list-style:none">{{ _('my_courses') }}</li>
-            {% for c in courses %}
-            <li><a href="{{ url_for('teacher.grades', course_id=c.id) }}" class="nav-link" style="font-size:12px;padding:0.35rem 0.75rem 0.35rem 2.2rem"><i class="bi bi-book" style="font-size:12px"></i>{{ c.course_code }}</a></li>
-            {% endfor %}
             <li><a href="#" class="nav-link"><i class="bi bi-question-circle"></i>{{ _('help') }}</a></li>
         </ul>
         <div class="sidebar-footer">
@@ -45,15 +57,8 @@
                 <span class="subtitle">{{ greeting }}, {{ g.user.full_name.split() | first }}.</span>
             </div>
             <div class="dash-topbar-right">
-                <div class="dropdown d-inline-block">
-                    <a href="#" class="lang-btn" data-bs-toggle="dropdown" aria-expanded="false" title="{{ _('language') }}">
-                        <i class="bi bi-globe2"></i>
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item lang-dropdown-item{% if current_lang == 'en' %} active{% endif %}" href="{{ url_for('auth.set_language', lang='en') }}">EN</a></li>
-                        <li><a class="dropdown-item lang-dropdown-item{% if current_lang == 'zh' %} active{% endif %}" href="{{ url_for('auth.set_language', lang='zh') }}">中文</a></li>
-                    </ul>
-                </div>
+                {% set btn_class = 'lang-btn' %}
+                {% include '_lang_switcher.html' %}
                 <i class="bi bi-bell bell"><span class="badge-dot"></span></i>
                 <a href="{{ url_for('auth.profile') }}" class="dash-avatar" title="{{ g.user.full_name }}"{% if g.user.avatar %} style="background-image:url({{ g.user.avatar }});background-size:cover;background-position:center;padding:0"{% endif %}>{% if not g.user.avatar %}{{ initials[:2] }}{% endif %}</a>
                 <a href="{{ url_for('auth.logout') }}" class="btn-signout-top ms-1"><i class="bi bi-box-arrow-right"></i>{{ _('sign_out') }}</a>
@@ -188,7 +193,19 @@
         </div>
     </div>
     <div class="col-md-6">
-        <div class="card glass-card h-100 overflow-hidden border-0">
+        <div class="card glass-card overflow-hidden border-0 mb-3">
+            <div class="glass-accent" style="background:linear-gradient(90deg,#14A5AA,#4B56B8)"></div>
+            <div class="card-body p-3">
+                <h6 class="fw-bold mb-3" style="font-size:14px;color:#12174F"><i class="bi bi-pie-chart me-1" style="color:#14A5AA"></i>{{ _('grade_distribution') }}</h6>
+                <div style="display:flex;align-items:center;justify-content:center;gap:16px">
+                    <div style="width:180px;height:180px;position:relative;flex-shrink:0">
+                        <canvas id="distChartDash"></canvas>
+                    </div>
+                    <div class="dist-legend" id="distLegendDash"></div>
+                </div>
+            </div>
+        </div>
+        <div class="card glass-card overflow-hidden border-0">
             <div class="glass-accent" style="background:linear-gradient(90deg,#2E3591,#2E3591)"></div>
             <div class="card-body p-3">
                 <h6 class="fw-bold mb-3" style="font-size:14px;color:#12174F"><i class="bi bi-bar-chart-steps me-1" style="color:#2E3591"></i>{{ _('frequently_used') }}</h6>
@@ -214,4 +231,112 @@
         </main>
     </div>
 </div>
+<script>
+function toggleCourseList() {
+    var list = document.getElementById('courseList');
+    var icon = document.getElementById('courseToggleIcon');
+    if (list.style.display === 'none' || list.style.display === '') {
+        list.style.display = 'block';
+        icon.textContent = '−';
+        icon.style.fontWeight = '700';
+        try { localStorage.setItem('courseListOpen', '1'); } catch(e) {}
+    } else {
+        list.style.display = 'none';
+        icon.textContent = '+';
+        try { localStorage.setItem('courseListOpen', '0'); } catch(e) {}
+    }
+}
+(function() {
+    var el = document.getElementById('courseList');
+    var ic = document.getElementById('courseToggleIcon');
+    if (!el || !ic) return;
+    if (el.querySelector('.nav-link.active')) {
+        el.style.display = 'block';
+        ic.textContent = '−';
+        ic.style.fontWeight = '700';
+    } else try {
+        if (localStorage.getItem('courseListOpen') === '1') {
+            el.style.display = 'block';
+            ic.textContent = '−';
+            ic.style.fontWeight = '700';
+        }
+    } catch(e) {}
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script>
+function buildLegend(chart, containerId) {
+    var el = document.getElementById(containerId);
+    if (!el) return;
+    var labels = chart.data.labels;
+    var colors = chart.data.datasets[0].backgroundColor;
+    var data = chart.data.datasets[0].data;
+    var meta = chart.getDatasetMeta(0);
+    el.innerHTML = '';
+    labels.forEach(function(label, i) {
+        var item = document.createElement('div');
+        item.className = 'legend-item' + (meta.data[i].hidden ? ' muted' : '');
+        item.innerHTML = '<span class="legend-dot" style="background:' + colors[i] + '"></span>'
+            + '<span class="legend-label">' + label + '</span>'
+            + '<span class="legend-count">' + data[i] + '</span>';
+        item.addEventListener('click', function() {
+            meta.data[i].hidden = !meta.data[i].hidden;
+            chart.update();
+            buildLegend(chart, containerId);
+        });
+        el.appendChild(item);
+    });
+}
+(function() {
+    var ctx = document.getElementById('distChartDash');
+    if (!ctx) return;
+    var grades = {{ (stats.grade_dist|tojson)|safe }};
+    var labels = ['A','B','C','D','F'];
+    var data = labels.map(function(g) { return grades[g] || 0; });
+    var colors = ['#14A5AA','#4B56B8','#2E3591','#C0392B','#991b1b'];
+    var hoverColors = ['#1cc5ca','#5d68d0','#3c47a8','#d94a3a','#b32424'];
+    var total = data.reduce(function(a,b) { return a+b; }, 0);
+    var chart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: data,
+                backgroundColor: colors,
+                hoverBackgroundColor: hoverColors,
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: 0,
+            hoverOffset: 0,
+            animation: {
+                animateRotate: true,
+                duration: 800,
+                easing: 'easeOutQuart'
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: '#12174F',
+                    titleFont: { size: 12, weight: '600' },
+                    bodyFont: { size: 13 },
+                    padding: 10,
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: function(ctx) {
+                            var pct = total > 0 ? (ctx.raw / total * 100).toFixed(1) : 0;
+                            var gradeLabel = ctx.label;
+                            return gradeLabel + ': ' + ctx.raw + ' (' + pct + '%)';
+                        }
+                    }
+                }
+            }
+        },
+    });
+    buildLegend(chart, 'distLegendDash');
+})();
+</script>
 {% endblock %}

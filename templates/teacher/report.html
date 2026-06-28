@@ -11,6 +11,27 @@
         <div class="menu-label">{{ _('menu') }}</div>
         <ul class="sidebar-nav">
             <li><a href="{{ url_for('teacher.dashboard') }}" class="nav-link"><i class="bi bi-speedometer2"></i>{{ _('dashboard') }}</a></li>
+            <li>
+                <div class="nav-link-collapse d-flex align-items-center justify-content-between" onclick="toggleCourseList()" style="cursor:pointer;padding:0.45rem 0.75rem;border-radius:8px;margin-bottom:2px;transition:background 0.15s">
+                    <span><i class="bi bi-book me-2"></i>{{ _('my_courses') }}</span>
+                    <span id="courseToggleIcon" class="course-toggle-icon">+</span>
+                </div>
+                <div id="courseList" style="display:none;overflow:hidden;transition:max-height 0.25s ease">
+                    {% for c in courses %}
+                    <div class="d-flex align-items-center sidebar-course-item">
+                        <a href="{{ url_for('teacher.grades', course_id=c.id) }}" class="nav-link{% if c.id == course.id %} active{% endif %}" style="font-size:12px;padding:0.3rem 0;flex:1;min-width:0;background:transparent!important;gap:6px"><i class="bi bi-book" style="font-size:12px"></i>{{ c.course_code }}</a>
+                        <div class="course-actions">
+                            <a href="{{ url_for('teacher.report', course_id=c.id) }}" class="course-action-icon" title="{{ _('reports') }}"><i class="bi bi-bar-chart"></i></a>
+                            <a href="{{ url_for('teacher.export_confirm', course_id=c.id) }}" class="course-action-icon" title="{{ _('export_csv') }}"><i class="bi bi-download"></i></a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </li>
+            <li><a href="{{ url_for('teacher.grades', course_id=course.id) }}" class="nav-link"><i class="bi bi-pencil-square"></i>{{ _('grade_entry') }}</a></li>
+            <li><a href="{{ url_for('teacher.report', course_id=course.id) }}" class="nav-link active"><i class="bi bi-file-earmark-bar-graph"></i>{{ _('reports') }}</a></li>
+            <li><a href="{{ url_for('teacher.export_confirm', course_id=course.id) }}" class="nav-link"><i class="bi bi-download"></i>{{ _('export_csv') }}</a></li>
+            <!-- FUTURE: placeholder nav items -->
             <li><a href="#" class="nav-link"><i class="bi bi-journal-text"></i>{{ _('lessons') }}</a></li>
             <li><a href="#" class="nav-link"><i class="bi bi-calendar3"></i>{{ _('schedule') }}</a></li>
             <li><a href="#" class="nav-link"><i class="bi bi-folder"></i>{{ _('materials') }}</a></li>
@@ -19,7 +40,7 @@
         </ul>
         <div class="sidebar-footer">
             <div class="user-card">
-                <div class="avatar">{{ initials[:2] }}</div>
+                <div class="avatar"{% if g.user.avatar %} style="background-image:url({{ g.user.avatar }});background-size:cover;background-position:center;background-origin:content-box;padding:0"{% endif %}>{% if not g.user.avatar %}{{ initials[:2] }}{% endif %}</div>
                 <div class="user-info">
                     <div class="user-name">{{ g.user.full_name }}</div>
                     <div class="user-role">{{ session.role }}</div>
@@ -35,18 +56,11 @@
                 <span class="subtitle"></span>
             </div>
             <div class="dash-topbar-right">
-                <div class="dropdown d-inline-block">
-                    <a href="#" class="lang-btn" data-bs-toggle="dropdown" aria-expanded="false" title="{{ _('language') }}">
-                        <i class="bi bi-globe2"></i>
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item lang-dropdown-item{% if current_lang == 'en' %} active{% endif %}" href="{{ url_for('auth.set_language', lang='en') }}">EN</a></li>
-                        <li><a class="dropdown-item lang-dropdown-item{% if current_lang == 'zh' %} active{% endif %}" href="{{ url_for('auth.set_language', lang='zh') }}">中文</a></li>
-                    </ul>
-                </div>
+                {% set btn_class = 'lang-btn' %}
+                {% include '_lang_switcher.html' %}
                 <i class="bi bi-bell bell"></i>
                 <a href="{{ url_for('auth.profile') }}" class="dash-avatar" title="{{ g.user.full_name }}">{{ initials[:2] }}</a>
-                <a href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-outline-danger ms-1">{{ _('sign_out') }}</a>
+                <a href="{{ url_for('auth.logout') }}" class="btn-signout-top ms-1"><i class="bi bi-box-arrow-right"></i>{{ _('sign_out') }}</a>
             </div>
         </header>
         <main class="dash-content">
@@ -55,12 +69,12 @@
             <div class="alert alert-{{ cat }} alert-dismissible fade show py-2">{{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
             {% endfor %}
             {% endwith %}
-
+<a href="{{ url_for('teacher.dashboard') }}" class="btn-back mb-2"><i class="bi bi-arrow-left"></i></a>
 <div class="row mb-3">
     <div class="col-md-3">
-        <div class="card text-center border-primary">
+        <div class="card text-center" style="border-color:#2E3591">
             <div class="card-body">
-                <h5 class="card-title text-primary">{{ avg }}</h5>
+                <h5 class="card-title" style="color:#2E3591">{{ avg }}</h5>
                 <small class="text-muted">{{ _('class_average') }}</small>
             </div>
         </div>
@@ -96,7 +110,7 @@
         <div class="card mb-3">
             <div class="card-header fw-bold d-flex justify-content-between">
                 <span>{{ _('grade_summary') }}</span>
-                <a href="{{ url_for('teacher.export_confirm', course_id=course.id) }}" class="btn btn-sm btn-success">{{ _('export_csv') }}</a>
+                <a href="{{ url_for('teacher.export_confirm', course_id=course.id) }}" class="btn btn-sm btn-primary">{{ _('export_csv') }}</a>
             </div>
             <div class="card-body p-0">
                 <table class="table table-striped mb-0">
@@ -108,7 +122,7 @@
                         <td>{{ gd.total }}</td>
                         <td>
                             {% set g = 'A' if gd.total >= 90 else 'B' if gd.total >= 80 else 'C' if gd.total >= 70 else 'D' if gd.total >= 60 else 'F' %}
-                            <span class="badge bg-{% if g == 'A' %}success{% elif g == 'B' %}primary{% elif g == 'C' %}warning text-dark{% elif g == 'D' %}danger{% else %}dark{% endif %}">
+                            <span class="grade-pill {{ g }}" style="background:var(--grade-{% if g == 'D' %}c{% else %}{{ g|lower }}{% endif %});color:var(--grade-{% if g == 'D' %}c{% else %}{{ g|lower }}{% endif %}-text)">
                                 {{ g }}
                             </span>
                         </td>
@@ -120,10 +134,16 @@
         </div>
     </div>
     <div class="col-md-5">
-        <div class="card mb-3">
-            <div class="card-header fw-bold">{{ _('grade_distribution') }}</div>
-            <div class="card-body">
-                <canvas id="distChart" height="200"></canvas>
+        <div class="card glass-card overflow-hidden border-0 mb-3">
+            <div class="glass-accent" style="background:linear-gradient(90deg,#14A5AA,#4B56B8)"></div>
+            <div class="card-body p-3">
+                <h6 class="fw-bold mb-3" style="font-size:14px;color:#12174F"><i class="bi bi-pie-chart me-1" style="color:#14A5AA"></i>{{ _('grade_distribution') }}</h6>
+                <div style="display:flex;align-items:center;justify-content:center;gap:20px">
+                    <div style="width:220px;height:220px;position:relative;flex-shrink:0">
+                        <canvas id="distChart"></canvas>
+                    </div>
+                    <div class="dist-legend" id="distLegend"></div>
+                </div>
             </div>
         </div>
         <div class="card">
@@ -137,7 +157,7 @@
                     <tr>
                         <td>{{ f.student.full_name }}</td>
                         <td>{{ f.total }}</td>
-                        <td><span class="badge bg-dark">F</span></td>
+                        <td><span class="grade-pill F" style="background:var(--grade-f);color:var(--grade-f-text)">F</span></td>
                         <td>
                             {% if f.missing_items %}
                             <ul class="list-unstyled mb-0 small">
@@ -164,20 +184,108 @@
     </div>
 </div>
 <a href="{{ url_for('teacher.dashboard') }}" class="btn btn-secondary mt-2">{{ _('back') }}</a>
+<script>
+function toggleCourseList() {
+    var list = document.getElementById('courseList');
+    var icon = document.getElementById('courseToggleIcon');
+    if (list.style.display === 'none' || list.style.display === '') {
+        list.style.display = 'block';
+        icon.textContent = '\u2212';
+        icon.style.fontWeight = '700';
+        try { localStorage.setItem('courseListOpen', '1'); } catch(e) {}
+    } else {
+        list.style.display = 'none';
+        icon.textContent = '+';
+        try { localStorage.setItem('courseListOpen', '0'); } catch(e) {}
+    }
+}
+(function() {
+    var el = document.getElementById('courseList');
+    var ic = document.getElementById('courseToggleIcon');
+    if (!el || !ic) return;
+    if (el.querySelector('.nav-link.active')) {
+        el.style.display = 'block';
+        ic.textContent = '\u2212';
+        ic.style.fontWeight = '700';
+    } else try {
+        if (localStorage.getItem('courseListOpen') === '1') {
+            el.style.display = 'block';
+            ic.textContent = '\u2212';
+            ic.style.fontWeight = '700';
+        }
+    } catch(e) {}
+})();
+</script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script>
-new Chart(document.getElementById('distChart'), {
-    type: 'bar',
-    data: {
-        labels: {{ labels|tojson }},
-        datasets: [{
-            label: '{{ _('students') }}',
-            data: {{ bins|tojson }},
-            backgroundColor: ['#dc3545','#ffc107','#0d6efd','#198754','#20c997']
-        }]
-    },
-    options: { responsive: true, plugins: { legend: { display: false } } }
-});
+function buildLegend(chart, containerId) {
+    var el = document.getElementById(containerId);
+    if (!el) return;
+    var labels = chart.data.labels;
+    var colors = chart.data.datasets[0].backgroundColor;
+    var data = chart.data.datasets[0].data;
+    var meta = chart.getDatasetMeta(0);
+    el.innerHTML = '';
+    labels.forEach(function(label, i) {
+        var item = document.createElement('div');
+        item.className = 'legend-item' + (meta.data[i].hidden ? ' muted' : '');
+        item.innerHTML = '<span class="legend-dot" style="background:' + colors[i] + '"></span>'
+            + '<span class="legend-label">' + label + '</span>'
+            + '<span class="legend-count">' + data[i] + '</span>';
+        item.addEventListener('click', function() {
+            meta.data[i].hidden = !meta.data[i].hidden;
+            chart.update();
+            buildLegend(chart, containerId);
+        });
+        el.appendChild(item);
+    });
+}
+(function() {
+    var ctx = document.getElementById('distChart');
+    if (!ctx) return;
+    var bins = {{ bins|tojson }};
+    var total = bins.reduce(function(a,b) { return a+b; }, 0);
+    var chart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ labels|tojson }},
+            datasets: [{
+                data: bins,
+                backgroundColor: ['#14A5AA','#4B56B8','#2E3591','#C0392B','#991b1b'],
+                hoverBackgroundColor: ['#1cc5ca','#5d68d0','#3c47a8','#d94a3a','#b32424'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: 0,
+            hoverOffset: 0,
+            animation: {
+                animateRotate: true,
+                duration: 800,
+                easing: 'easeOutQuart'
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: '#12174F',
+                    titleFont: { size: 12, weight: '600' },
+                    bodyFont: { size: 13 },
+                    padding: 10,
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: function(ctx) {
+                            var pct = total > 0 ? (ctx.raw / total * 100).toFixed(1) : 0;
+                            return ctx.label + ': ' + ctx.raw + ' (' + pct + '%)';
+                        }
+                    }
+                }
+            }
+        },
+    });
+    buildLegend(chart, 'distLegend');
+})();
 </script>
         </main>
     </div>
