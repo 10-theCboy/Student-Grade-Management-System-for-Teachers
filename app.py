@@ -498,8 +498,8 @@ def get_db():
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
-    return conn
-
+    g.db = conn
+    return g.db
 
 def init_db():
     db_path = os.environ.get('TEST_DB_PATH') or os.path.join(os.path.dirname(os.path.abspath(__file__)), 'grades.db')
