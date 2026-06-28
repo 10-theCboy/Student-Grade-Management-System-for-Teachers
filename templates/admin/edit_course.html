@@ -24,6 +24,8 @@
                     {% endfor %}
                 </div>
             </li>
+            <li><a href="{{ url_for('admin.courses') }}" class="nav-link"><i class="bi bi-plus-circle"></i>{{ _('add_course') }}</a></li>
+            <li><a href="{{ url_for('admin.edit_courses_list') }}" class="nav-link"><i class="bi bi-pencil-square"></i>{{ _('edit_courses') }}</a></li>
             <li><a href="{{ url_for('admin.audit_log') }}" class="nav-link"><i class="bi bi-file-earmark-bar-graph"></i>{{ _('reports') }}</a></li>
             <li><a href="{{ url_for('admin.audit_log') }}" class="nav-link"><i class="bi bi-clock-history"></i>{{ _('audit_log') }}</a></li>
             <li><a href="#" class="nav-link"><i class="bi bi-question-circle"></i>{{ _('help') }}</a></li>

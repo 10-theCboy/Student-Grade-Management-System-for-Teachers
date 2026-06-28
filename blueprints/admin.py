@@ -82,6 +82,26 @@ def courses():
     return render_template('admin/courses.html', courses=all_with_teachers(), teachers=all_teachers())
 
 
+@admin_bp.route('/courses/edit')
+@login_required
+@require_role('admin')
+def edit_courses_list():
+    courses_data = g.db.execute('''
+        SELECT c.id, c.course_code, c.course_name, c.credits,
+               u.full_name AS teacher_name,
+               (SELECT COUNT(*) FROM enrollments e WHERE e.course_id=c.id) AS student_count,
+               (SELECT ROUND(AVG(s.score), 1) FROM scores s
+                JOIN grade_items gi ON s.grade_item_id=gi.id
+                JOIN grade_categories gc ON gi.category_id=gc.id
+                WHERE gc.course_id=c.id) AS avg_grade
+        FROM courses c
+        LEFT JOIN users u ON c.teacher_id=u.id
+        ORDER BY c.course_code
+    ''').fetchall()
+    courses = g.db.execute("SELECT id, course_code, course_name FROM courses ORDER BY course_code").fetchall()
+    return render_template('admin/edit_courses_list.html', courses_data=courses_data, courses=courses)
+
+
 @admin_bp.route('/courses/<int:course_id>/assign', methods=['POST'])
 @login_required
 @require_role('admin')
